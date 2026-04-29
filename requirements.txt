@@ -1,0 +1,5 @@
+streamlit>=1.28
+pymysql>=1.1
+pandas>=2.0
+dashscope>=1.17
+python-dotenv>=1.0
