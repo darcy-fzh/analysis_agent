@@ -65,18 +65,28 @@ button[kind], [data-testid="baseButton-secondary"] {
     font-weight: 500 !important;
 }
 
-/* Focus ring — subtle, no red */
-input:focus-visible, textarea:focus-visible {
-    box-shadow: 0 0 0 1px var(--secondary-background-color) !important;
-    border-radius: 8px;
-}
-/* Kill red outline on selectbox / dropdown */
-[data-baseweb="select"] div:focus-visible,
-[role="combobox"]:focus-visible,
-[role="listbox"]:focus-visible {
+/* Kill all red borders on inputs / selects / dropdowns */
+[data-baseweb="input"]:focus,
+[data-baseweb="input"]:focus-within,
+[data-baseweb="input"]:active,
+[data-baseweb="select"]:focus,
+[data-baseweb="select"]:focus-within,
+[data-baseweb="select"]:active,
+input, textarea, [role="combobox"], [role="listbox"] {
     outline: none !important;
     box-shadow: none !important;
+}
+[data-baseweb="input"] > div,
+[data-baseweb="select"] > div {
     border-color: var(--secondary-background-color) !important;
+}
+[data-baseweb="input"]:focus-within > div,
+[data-baseweb="select"]:focus-within > div,
+input:focus, input:focus-visible, textarea:focus, textarea:focus-visible,
+[role="combobox"]:focus, [role="combobox"]:focus-visible {
+    border-color: var(--secondary-background-color) !important;
+    box-shadow: none !important;
+    outline: none !important;
 }
 
 /* Compact sidebar buttons */
@@ -231,8 +241,6 @@ def _render_result(df, sql: str, key_suffix: str, insight: str = "") -> None:
                     ax.axis("equal")
                     st.pyplot(fig)
                     plt.close(fig)
-
-
 
 def _gen_insight(llm: LLMService, question: str, sql: str, df) -> str:
     """Generate a plain-English summary of query results, with spinner."""
@@ -403,21 +411,6 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
 
         st.divider()
 
-        st.subheader("Cache")
-        cache_stats = cache.stats()
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("Hits", cache_stats["hits"])
-        with col2:
-            st.metric("Misses", cache_stats["misses"])
-        st.caption(f"Entries: {cache_stats['size']} | TTL: {cache_stats['ttl']}s")
-
-        if st.button("Clear Cache"):
-            cache.clear()
-            st.rerun()
-
-        st.divider()
-
         with st.expander("Metrics"):
             for m in get_metric_list():
                 label = f"{m['name']} — {m['description']}"
@@ -459,15 +452,6 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
                             st.rerun()
             except Exception:
                 st.caption("History unavailable")
-
-        st.divider()
-
-        with st.expander("Database Schema"):
-            try:
-                schema = db.get_schema_context()
-                st.code(schema, language="sql")
-            except Exception:
-                st.warning("Schema unavailable")
 
 
 def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None:
