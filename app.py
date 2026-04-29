@@ -160,8 +160,9 @@ def main() -> None:
 
     try:
         db.init_schema()
-    except Exception:
+    except Exception as e:
         st.warning("数据库初始化失败，请检查连接配置")
+        st.code(str(e))
 
     render_sidebar(db, cache)
     render_main(db, llm, cache)
