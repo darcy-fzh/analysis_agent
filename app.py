@@ -71,6 +71,12 @@ input:focus-visible, textarea:focus-visible, [role="combobox"]:focus-visible {
     border-radius: 8px;
 }
 
+/* Compact sidebar buttons */
+[data-testid="stSidebar"] button[kind] {
+    padding-top: 0.2rem !important;
+    padding-bottom: 0.2rem !important;
+}
+
 /* Sidebar — dark bg like DeepSeek */
 [data-testid="stSidebar"] {
     background-color: #f8f9fa;
@@ -364,7 +370,7 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
                 for row in recent:
                     label = row["question"][:60] + ("..." if len(row["question"]) > 60 else "")
                     status = "ERR" if row["error"] else f"{row['result_rows'] or 0}r"
-                    col1, col2 = st.columns([10, 1])
+                    col1, col2 = st.columns([14, 1])
                     with col1:
                         if st.button(
                             f"[{status}] {label}",
@@ -375,7 +381,12 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
                             st.session_state.pending_metric_sql = None
                             st.rerun()
                     with col2:
-                        if st.button("✕", key=f"del_{row['id']}", help="Delete this entry"):
+                        if st.button(
+                            "✕",
+                            key=f"del_{row['id']}",
+                            help="Delete this entry",
+                            use_container_width=True,
+                        ):
                             db.delete_query(row["id"])
                             st.rerun()
             except Exception:
