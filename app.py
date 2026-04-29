@@ -73,8 +73,12 @@ input:focus-visible, textarea:focus-visible, [role="combobox"]:focus-visible {
 
 /* Compact sidebar buttons */
 [data-testid="stSidebar"] button[kind] {
-    padding-top: 0.2rem !important;
-    padding-bottom: 0.2rem !important;
+    padding: 0.15rem 0.35rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    min-width: unset !important;
 }
 
 /* Sidebar — subtle bg, adapts to theme */
@@ -381,7 +385,7 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
                 for row in recent:
                     label = row["question"][:60] + ("..." if len(row["question"]) > 60 else "")
                     status = "ERR" if row["error"] else f"{row['result_rows'] or 0}r"
-                    col1, col2 = st.columns([14, 1])
+                    col1, col2 = st.columns([10, 1])
                     with col1:
                         if st.button(
                             f"[{status}] {label}",
