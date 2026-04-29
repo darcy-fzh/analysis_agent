@@ -357,17 +357,27 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
         with st.expander("Query History"):
             try:
                 recent = db.get_recent_queries(10)
+                if recent:
+                    if st.button("Clear All", key="clear_all_history", use_container_width=True):
+                        db.clear_query_history()
+                        st.rerun()
                 for row in recent:
                     label = row["question"][:60] + ("..." if len(row["question"]) > 60 else "")
                     status = "ERR" if row["error"] else f"{row['result_rows'] or 0}r"
-                    if st.button(
-                        f"[{status}] {label}",
-                        key=f"hist_{row['created_at']}",
-                        use_container_width=True,
-                    ):
-                        st.session_state.pending_question = row["question"]
-                        st.session_state.pending_metric_sql = None
-                        st.rerun()
+                    col1, col2 = st.columns([10, 1])
+                    with col1:
+                        if st.button(
+                            f"[{status}] {label}",
+                            key=f"hist_{row['id']}",
+                            use_container_width=True,
+                        ):
+                            st.session_state.pending_question = row["question"]
+                            st.session_state.pending_metric_sql = None
+                            st.rerun()
+                    with col2:
+                        if st.button("✕", key=f"del_{row['id']}", help="Delete this entry"):
+                            db.delete_query(row["id"])
+                            st.rerun()
             except Exception:
                 st.caption("History unavailable")
 

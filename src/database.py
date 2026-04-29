@@ -274,11 +274,25 @@ class DatabaseManager:
         conn = self._get_conn()
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT question, sql_text, result_rows, error, created_at "
+                "SELECT id, question, sql_text, result_rows, error, created_at "
                 "FROM query_history ORDER BY id DESC LIMIT %s",
                 (limit,),
             )
             return cur.fetchall()
+
+    def delete_query(self, query_id: int) -> None:
+        """Delete a single query from history by id."""
+        conn = self._get_conn()
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM query_history WHERE id = %s", (query_id,))
+            conn.commit()
+
+    def clear_query_history(self) -> None:
+        """Delete all query history records."""
+        conn = self._get_conn()
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM query_history")
+            conn.commit()
 
     def get_table_stats(self) -> dict[str, int]:
         """Return row counts for all tables."""
