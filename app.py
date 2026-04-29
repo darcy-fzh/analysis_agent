@@ -298,10 +298,10 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
                 st.caption(f"**Owner:** {owner}")
                 if table_info.get("TABLE_COMMENT"):
                     st.caption(f"**Description:** {table_info['TABLE_COMMENT']}")
-                st.caption(
-                    f"**Rows:** {table_info.get('TABLE_ROWS', '?'):,}  |  "
-                    f"**Updated:** {table_info.get('UPDATE_TIME', '—')}"
-                )
+                table_rows = table_info.get("TABLE_ROWS")
+                rows_display = f"{table_rows:,}" if table_rows is not None else "?"
+                updated = table_info.get("UPDATE_TIME") or "—"
+                st.caption(f"**Rows:** {rows_display}  |  **Updated:** {updated}")
                 latest = db.get_latest_partition(selected)
                 if latest:
                     st.caption(f"**Latest partition:** {latest}")
@@ -323,8 +323,9 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
                 if st.button("Close", key="close_tbl", use_container_width=True):
                     st.session_state.sidebar_selected_table = None
                     st.rerun()
-        except Exception:
+        except Exception as e:
             st.warning("Unable to load table info")
+            st.caption(str(e))
 
         st.divider()
 
@@ -353,22 +354,22 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
 
         st.divider()
 
-        st.subheader("Query History")
-        try:
-            recent = db.get_recent_queries(10)
-            for row in recent:
-                label = row["question"][:60] + ("..." if len(row["question"]) > 60 else "")
-                status = "ERR" if row["error"] else f"{row['result_rows'] or 0}r"
-                if st.button(
-                    f"[{status}] {label}",
-                    key=f"hist_{row['created_at']}",
-                    use_container_width=True,
-                ):
-                    st.session_state.pending_question = row["question"]
-                    st.session_state.pending_metric_sql = None
-                    st.rerun()
-        except Exception:
-            st.caption("History unavailable")
+        with st.expander("Query History"):
+            try:
+                recent = db.get_recent_queries(10)
+                for row in recent:
+                    label = row["question"][:60] + ("..." if len(row["question"]) > 60 else "")
+                    status = "ERR" if row["error"] else f"{row['result_rows'] or 0}r"
+                    if st.button(
+                        f"[{status}] {label}",
+                        key=f"hist_{row['created_at']}",
+                        use_container_width=True,
+                    ):
+                        st.session_state.pending_question = row["question"]
+                        st.session_state.pending_metric_sql = None
+                        st.rerun()
+            except Exception:
+                st.caption("History unavailable")
 
         st.divider()
 
