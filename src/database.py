@@ -1,5 +1,7 @@
-import os
 import logging
+import os
+import random
+from datetime import date, timedelta
 
 import pandas as pd
 import pymysql
@@ -12,7 +14,7 @@ logger = logging.getLogger(__name__)
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS orders (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    order_date DATE NOT NULL,
+    order_date CHAR(8) NOT NULL,
     customer_id INT NOT NULL,
     channel VARCHAR(20) NOT NULL,
     region VARCHAR(50),
@@ -27,7 +29,7 @@ CREATE TABLE IF NOT EXISTS customers (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100),
     email VARCHAR(100),
-    registration_date DATE,
+    registration_date CHAR(8),
     customer_segment VARCHAR(20),
     region VARCHAR(50)
 );
@@ -41,40 +43,101 @@ CREATE TABLE IF NOT EXISTS products (
 );
 """
 
-SEED_ORDERS = """
-INSERT IGNORE INTO orders (id, order_date, customer_id, channel, region, gmv, order_amount, product_category, payment_method) VALUES
-(1, '2024-01-15', 1, 'web', '华东', 100.00, 100.00, 'electronics', 'credit_card'),
-(2, '2024-01-15', 2, 'app', '华北', 150.00, 150.00, 'clothing', 'alipay'),
-(3, '2024-01-16', 1, 'store', '华东', 200.00, 200.00, 'electronics', 'wechat_pay'),
-(4, '2024-01-16', 3, 'web', '华南', 75.00, 75.00, 'books', 'credit_card'),
-(5, '2024-01-17', 2, 'app', '华北', 120.00, 120.00, 'clothing', 'alipay'),
-(6, '2024-01-18', 4, 'web', '华东', 300.00, 300.00, 'electronics', 'credit_card'),
-(7, '2024-01-19', 1, 'store', '华东', 80.00, 80.00, 'accessories', 'cash'),
-(8, '2024-01-20', 5, 'app', '华南', 220.00, 220.00, 'electronics', 'alipay');
-"""
-
-SEED_CUSTOMERS = """
-INSERT IGNORE INTO customers (id, name, email, registration_date, customer_segment, region) VALUES
-(1, '张三', 'zhangsan@example.com', '2023-12-01', 'VIP', '华东'),
-(2, '李四', 'lisi@example.com', '2024-01-01', 'Regular', '华北'),
-(3, '王五', 'wangwu@example.com', '2024-01-10', 'New', '华南'),
-(4, '赵六', 'zhaoliu@example.com', '2023-11-15', 'VIP', '华东'),
-(5, '孙七', 'sunqi@example.com', '2024-01-05', 'Regular', '华南');
-"""
-
-SEED_PRODUCTS = """
-INSERT IGNORE INTO products (id, name, category, price, cost) VALUES
-(1, 'iPhone 15', 'electronics', 6999.00, 5000.00),
-(2, '羽绒服', 'clothing', 899.00, 500.00),
-(3, 'Python编程', 'books', 99.00, 30.00),
-(4, '蓝牙耳机', 'electronics', 299.00, 150.00),
-(5, '运动鞋', 'clothing', 599.00, 300.00);
-"""
-
 DANGEROUS_KEYWORDS = [
     "INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "TRUNCATE",
     "CREATE", "GRANT", "REVOKE", "EXEC", "EXECUTE", "LOAD",
 ]
+
+# ── data generators ──────────────────────────────────────────────
+
+SURNAMES = ["张", "李", "王", "赵", "孙", "周", "吴", "郑", "冯", "陈",
+            "褚", "卫", "蒋", "沈", "韩", "杨", "朱", "秦", "许", "何"]
+GIVENS = ["伟", "芳", "娜", "敏", "静", "丽", "强", "磊", "洋", "勇",
+          "艳", "杰", "军", "秀英", "明", "超", "平", "华", "刚", "飞"]
+
+CHANNELS = ["web", "app", "store", "miniprogram"]
+REGIONS = ["华东", "华北", "华南", "华中", "西南", "西北", "东北"]
+CATEGORIES = ["electronics", "clothing", "books", "accessories", "home",
+              "sports", "beauty", "food", "toys", "office"]
+PAYMENTS = ["credit_card", "alipay", "wechat_pay", "cash", "unionpay"]
+SEGMENTS = ["VIP", "Regular", "New"]
+
+PRODUCT_POOL = [
+    ("iPhone 15", "electronics", 6999.00, 5000.00),
+    ("MacBook Pro", "electronics", 14999.00, 11000.00),
+    ("蓝牙耳机", "electronics", 299.00, 150.00),
+    ("平板电脑", "electronics", 3499.00, 2200.00),
+    ("智能手表", "electronics", 2599.00, 1600.00),
+    ("羽绒服", "clothing", 899.00, 500.00),
+    ("运动鞋", "clothing", 599.00, 300.00),
+    ("牛仔裤", "clothing", 399.00, 180.00),
+    ("T恤", "clothing", 129.00, 60.00),
+    ("连衣裙", "clothing", 459.00, 220.00),
+    ("Python编程", "books", 99.00, 30.00),
+    ("机器学习实战", "books", 89.00, 28.00),
+    ("数据分析入门", "books", 69.00, 20.00),
+    ("三体全集", "books", 128.00, 60.00),
+    ("活着", "books", 45.00, 15.00),
+    ("双肩包", "accessories", 199.00, 100.00),
+    ("太阳镜", "accessories", 299.00, 120.00),
+    ("腰带", "accessories", 159.00, 70.00),
+    ("台灯", "home", 249.00, 130.00),
+    ("落地扇", "home", 399.00, 220.00),
+    ("瑜伽垫", "sports", 99.00, 40.00),
+    ("哑铃组", "sports", 349.00, 180.00),
+    ("面霜", "beauty", 259.00, 100.00),
+    ("巧克力礼盒", "food", 168.00, 90.00),
+    ("积木套装", "toys", 299.00, 150.00),
+    ("办公椅", "office", 1299.00, 700.00),
+]
+
+
+def _ymd(d: date) -> str:
+    return d.strftime("%Y%m%d")
+
+
+def _generate_customers(count: int = 100) -> list[tuple]:
+    rows = []
+    for i in range(1, count + 1):
+        surname = random.choice(SURNAMES)
+        given = random.choice(GIVENS) + (random.choice(GIVENS) if random.random() < 0.3 else "")
+        name = surname + given
+        email = f"user{i:04d}@example.com"
+        reg_date = _ymd(date(2022, 1, 1) + timedelta(days=random.randint(0, 1095)))
+        segment = random.choices(SEGMENTS, weights=[15, 55, 30])[0]
+        region = random.choice(REGIONS)
+        rows.append((i, name, email, reg_date, segment, region))
+    return rows
+
+
+def _generate_orders(count: int = 3000, customer_count: int = 100) -> list[tuple]:
+    rows = []
+    start = date(2024, 1, 1)
+    end = date(2025, 12, 31)
+    days_range = (end - start).days
+    product_count = len(PRODUCT_POOL)
+
+    for i in range(1, count + 1):
+        order_date = start + timedelta(days=random.randint(0, days_range))
+        customer_id = random.randint(1, customer_count)
+        channel = random.choices(CHANNELS, weights=[35, 30, 20, 15])[0]
+        region = random.choice(REGIONS)
+        product_idx = random.randint(0, product_count - 1)
+        category = PRODUCT_POOL[product_idx][1]
+        base_price = PRODUCT_POOL[product_idx][2]
+        quantity = random.choices([1, 2, 3], weights=[70, 20, 10])[0]
+        gmv = round(base_price * quantity * random.uniform(0.85, 1.0), 2)
+        order_amount = gmv
+        payment_method = random.choice(PAYMENTS)
+        rows.append((
+            i, _ymd(order_date), customer_id, channel, region,
+            gmv, order_amount, category, payment_method,
+        ))
+    return rows
+
+
+def _generate_products() -> list[tuple]:
+    return [(i, *p) for i, p in enumerate(PRODUCT_POOL, start=1)]
 
 
 class DatabaseManager:
@@ -111,20 +174,43 @@ class DatabaseManager:
                 stmt = stmt.strip()
                 if stmt:
                     cur.execute(stmt)
+            conn.commit()
 
-            cur.execute("SELECT COUNT(*) AS cnt FROM orders")
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) AS cnt FROM products")
             if cur.fetchone()["cnt"] == 0:
-                cur.execute(SEED_ORDERS)
+                products = _generate_products()
+                cur.executemany(
+                    "INSERT INTO products (id, name, category, price, cost) "
+                    "VALUES (%s, %s, %s, %s, %s)",
+                    products,
+                )
+                conn.commit()
+                logger.info("Seeded %d products.", len(products))
 
             cur.execute("SELECT COUNT(*) AS cnt FROM customers")
             if cur.fetchone()["cnt"] == 0:
-                cur.execute(SEED_CUSTOMERS)
+                customers = _generate_customers(100)
+                cur.executemany(
+                    "INSERT INTO customers (id, name, email, registration_date, "
+                    "customer_segment, region) VALUES (%s, %s, %s, %s, %s, %s)",
+                    customers,
+                )
+                conn.commit()
+                logger.info("Seeded %d customers.", len(customers))
 
-            cur.execute("SELECT COUNT(*) AS cnt FROM products")
+            cur.execute("SELECT COUNT(*) AS cnt FROM orders")
             if cur.fetchone()["cnt"] == 0:
-                cur.execute(SEED_PRODUCTS)
+                orders = _generate_orders(3000, 100)
+                cur.executemany(
+                    "INSERT INTO orders (id, order_date, customer_id, channel, "
+                    "region, gmv, order_amount, product_category, payment_method) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    orders,
+                )
+                conn.commit()
+                logger.info("Seeded %d orders.", len(orders))
 
-            conn.commit()
         logger.info("Schema initialized and seed data inserted.")
 
     def execute_query(self, sql: str) -> pd.DataFrame:
@@ -168,7 +254,6 @@ class DatabaseManager:
         if not upper.startswith("SELECT"):
             return False, "只允许 SELECT 查询"
         for kw in DANGEROUS_KEYWORDS:
-            # Use word-boundary check
             import re
             if re.search(rf"\b{kw}\b", upper):
                 return False, f"SQL 包含禁止的关键字: {kw}"
