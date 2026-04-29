@@ -83,11 +83,11 @@ def _execute_question(
 
         if df.empty:
             st.info("Query returned no results")
-            db.save_query(q, sql_text=sql, row_count=0)
+            db.save_query(q, sql=sql, row_count=0)
         else:
             st.subheader(f"Results ({len(df)} rows)")
             st.dataframe(df, use_container_width=True)
-            db.save_query(q, sql_text=sql, row_count=len(df))
+            db.save_query(q, sql=sql, row_count=len(df))
 
             numeric_cols = df.select_dtypes(include="number").columns.tolist()
             if numeric_cols:
