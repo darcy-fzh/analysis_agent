@@ -17,18 +17,75 @@ logger = logging.getLogger(__name__)
 
 CUSTOM_CSS = """
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
 html, body, [class*="css"] {
     font-family:
+        "Inter",
+        system-ui,
         -apple-system,
         BlinkMacSystemFont,
         "Segoe UI",
         Roboto,
-        Oxygen-Sans,
+        Oxygen,
         Ubuntu,
         Cantarell,
+        "Open Sans",
         "Helvetica Neue",
-        Arial,
         sans-serif;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Code blocks — DeepSeek monospace stack */
+code, pre, [data-testid="stCodeBlock"] code {
+    font-family:
+        Menlo,
+        Monaco,
+        Consolas,
+        "Cascadia Mono",
+        "Ubuntu Mono",
+        "JetBrains Mono",
+        "Fira Code",
+        "Roboto Mono",
+        "Courier New",
+        Courier,
+        monospace;
+}
+
+/* Rounded inputs — DeepSeek uses 8px/10px */
+[data-testid="stTextInput"] input,
+[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+textarea {
+    border-radius: 8px !important;
+}
+
+/* Buttons */
+button[kind], [data-testid="baseButton-secondary"] {
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+}
+
+/* Focus ring */
+input:focus-visible, textarea:focus-visible, [role="combobox"]:focus-visible {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5) !important;
+    border-radius: 8px;
+}
+
+/* Sidebar — dark bg like DeepSeek */
+[data-testid="stSidebar"] {
+    background-color: #f8f9fa;
+}
+
+/* Dataframe */
+[data-testid="stTable"] table, [data-testid="stDataFrame"] table {
+    font-size: 13px;
+}
+
+/* Metric cards */
+[data-testid="stMetric"] {
+    background: transparent;
 }
 </style>
 """
