@@ -65,28 +65,10 @@ button[kind], [data-testid="baseButton-secondary"] {
     font-weight: 500 !important;
 }
 
-/* Kill all red borders on inputs / selects / dropdowns */
-[data-baseweb="input"]:focus,
-[data-baseweb="input"]:focus-within,
-[data-baseweb="input"]:active,
-[data-baseweb="select"]:focus,
-[data-baseweb="select"]:focus-within,
-[data-baseweb="select"]:active,
-input, textarea, [role="combobox"], [role="listbox"] {
-    outline: none !important;
-    box-shadow: none !important;
-}
-[data-baseweb="input"] > div,
-[data-baseweb="select"] > div {
-    border-color: var(--secondary-background-color) !important;
-}
-[data-baseweb="input"]:focus-within > div,
-[data-baseweb="select"]:focus-within > div,
-input:focus, input:focus-visible, textarea:focus, textarea:focus-visible,
-[role="combobox"]:focus, [role="combobox"]:focus-visible {
-    border-color: var(--secondary-background-color) !important;
-    box-shadow: none !important;
-    outline: none !important;
+/* Focus ring — clean, no red */
+input:focus-visible, textarea:focus-visible {
+    box-shadow: 0 0 0 1px var(--secondary-background-color) !important;
+    border-radius: 8px;
 }
 
 /* Compact sidebar buttons */
@@ -151,18 +133,23 @@ h3 {
 }
 
 /* Override Streamlit row-reverse for user messages */
-[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]),
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatar-user"]),
 section[data-testid="stChatMessage"] {
     flex-direction: row !important;
 }
 
-/* Chat bubbles — muted, no bright background */
+/* Chat bubbles */
 [data-testid="stChatMessage"] > div {
     background: transparent !important;
     border-radius: 8px !important;
     padding: 0.4rem 0.9rem !important;
     border: none !important;
     box-shadow: none !important;
+}
+
+/* User message — background like the chat input box */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatar-user"]) > div {
+    background-color: var(--secondary-background-color) !important;
 }
 </style>
 """
@@ -186,7 +173,9 @@ def get_cache() -> QueryCache:
 def _render_result(df, sql: str, key_suffix: str, insight: str = "") -> None:
     """Render query result display (insight, SQL, dataframe, chart) without re-executing."""
     if insight:
+        st.subheader("Summary")
         st.markdown(insight)
+        st.divider()
 
     with st.expander("SQL"):
         st.code(sql, language="sql")
