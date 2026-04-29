@@ -87,6 +87,38 @@ input:focus-visible, textarea:focus-visible, [role="combobox"]:focus-visible {
 [data-testid="stMetric"] {
     background: transparent;
 }
+
+/* Title — match api-docs.deepseek.com heading style */
+h1 {
+    font-family:
+        system-ui,
+        -apple-system,
+        "Segoe UI",
+        Roboto,
+        Ubuntu,
+        Cantarell,
+        "Noto Sans",
+        sans-serif,
+        BlinkMacSystemFont,
+        "Helvetica Neue",
+        Arial,
+        sans-serif !important;
+    font-size: 24px !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.02em;
+    color: #1a1a1a;
+}
+
+/* Subtitle / caption under title */
+h1 + div {
+    font-family:
+        system-ui,
+        -apple-system,
+        "Segoe UI",
+        Roboto,
+        sans-serif !important;
+    color: #6b7280;
+}
 </style>
 """
 
