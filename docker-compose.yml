@@ -5,7 +5,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123456}
       MYSQL_DATABASE: ${DB_NAME:-agent_db}
-      MYSQL_USER: ${DB_USER:-analytics_readonly}
+      MYSQL_USER: ${DB_USER:-agent_user}
       MYSQL_PASSWORD: ${DB_PASSWORD:-readonly123}
     ports:
       - "3306:3306"
