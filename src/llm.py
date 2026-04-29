@@ -74,6 +74,46 @@ Generate SQL query:"""
             logger.exception("LLM generation failed")
             raise RuntimeError(f"SQL generation failed: {e}") from e
 
+    def generate_insight(self, question: str, sql: str, df_markdown: str) -> str:
+        """Generate a plain-English summary of query results."""
+        user_message = f"""## User Question
+{question}
+
+## SQL Executed
+```sql
+{sql}
+```
+
+## Query Results (top rows)
+{df_markdown}
+
+Write a concise, plain-English summary of what the data shows. Highlight the key numbers, trends, or patterns. Keep it under 4 sentences. Do NOT repeat the SQL. Just explain the findings."""
+
+        try:
+            response = Generation.call(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are a data analyst. Explain query results in clear, concise plain English. Focus on the key numbers and what they mean."},
+                    {"role": "user", "content": user_message},
+                ],
+                api_key=os.environ.get("DASHSCOPE_API_KEY"),
+                base_url=os.environ.get("DASHSCOPE_BASE_URL"),
+            )
+
+            if response.status_code != 200:
+                logger.error(
+                    "Insight API error: code=%s message=%s",
+                    response.status_code,
+                    response.message,
+                )
+                return ""
+
+            return response.output.choices[0].message.content.strip()
+
+        except Exception as e:
+            logger.exception("Insight generation failed")
+            return ""
+
     @staticmethod
     def _extract_sql(raw: str) -> str:
         """Extract pure SQL from LLM response, handling markdown code blocks."""

@@ -117,6 +117,12 @@ h1 + div {
     opacity: 0.6;
 }
 
+/* Subheaders must be smaller than title */
+h3 {
+    font-size: 16px !important;
+    font-weight: 500 !important;
+}
+
 /* Chat — hide avatars and icons */
 [data-testid="stChatMessageAvatar"],
 [data-testid="chatAvatarIcon-user"],
@@ -167,15 +173,20 @@ def get_cache() -> QueryCache:
     return QueryCache(ttl=300)
 
 
-def _render_result(df, sql: str, key_suffix: str) -> None:
-    """Render query result display (SQL, dataframe, chart) without re-executing."""
-    st.code(sql, language="sql")
+def _render_result(df, sql: str, key_suffix: str, insight: str = "") -> None:
+    """Render query result display (insight, SQL, dataframe, chart) without re-executing."""
+    if insight:
+        st.markdown(insight)
+
+    with st.expander("SQL"):
+        st.code(sql, language="sql")
 
     if df.empty:
         st.info("Query returned no results")
         return
 
-    st.subheader(f"Results ({len(df)} rows)")
+    st.subheader("Results")
+    st.caption(f"{len(df)} rows returned")
     st.dataframe(df, use_container_width=True)
 
     numeric_cols = df.select_dtypes(include="number").columns.tolist()
@@ -222,6 +233,16 @@ def _render_result(df, sql: str, key_suffix: str) -> None:
                     plt.close(fig)
 
 
+
+def _gen_insight(llm: LLMService, question: str, sql: str, df) -> str:
+    """Generate a plain-English summary of query results, with spinner."""
+    if df.empty:
+        return ""
+    preview = df.head(20).to_markdown(index=False)
+    with st.spinner("AI is analyzing results..."):
+        return llm.generate_insight(question, sql, preview)
+
+
 def _execute_question(
     db: DatabaseManager,
     llm: LLMService,
@@ -237,7 +258,7 @@ def _execute_question(
         cached_result = cache.get(q, schema_version)
         if cached_result is not None:
             st.caption("Returned from cache")
-            sql, df = cached_result
+            sql, df, insight = cached_result
         elif use_metric_sql:
             sql = use_metric_sql
             valid, err_msg = DatabaseManager.validate_sql(sql)
@@ -246,7 +267,8 @@ def _execute_question(
                 return
             with st.spinner("Running metric query..."):
                 df = db.execute_query(sql)
-            cache.set(q, schema_version, (sql, df))
+            insight = _gen_insight(llm, q, sql, df)
+            cache.set(q, schema_version, (sql, df, insight))
         else:
             with st.spinner("AI is generating SQL..."):
                 sql = llm.generate_sql(q, schema)
@@ -259,9 +281,10 @@ def _execute_question(
 
             with st.spinner("Querying database..."):
                 df = db.execute_query(sql)
-            cache.set(q, schema_version, (sql, df))
+            insight = _gen_insight(llm, q, sql, df)
+            cache.set(q, schema_version, (sql, df, insight))
 
-        _render_result(df, sql, str(hash(q)))
+        _render_result(df, sql, str(hash(q)), insight=insight)
 
         if df.empty:
             db.save_query(q, sql=sql, row_count=0)
@@ -272,6 +295,7 @@ def _execute_question(
         st.session_state.last_result = {
             "sql": sql,
             "df": df,
+            "insight": insight,
             "question": q,
             "from_cache": cached_result is not None,
         }
@@ -473,7 +497,7 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         with st.chat_message("assistant", avatar=None):
             if result.get("from_cache"):
                 st.caption("Returned from cache")
-            _render_result(result["df"], result["sql"], str(hash(result["question"])))
+            _render_result(result["df"], result["sql"], str(hash(result["question"])), insight=result.get("insight", ""))
 
 
 def main() -> None:
