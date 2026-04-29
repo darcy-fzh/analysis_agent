@@ -49,6 +49,36 @@ def get_cache() -> QueryCache:
     return QueryCache(ttl=300)
 
 
+def _render_result(df, sql: str, key_suffix: str) -> None:
+    """Render query result display (SQL, dataframe, chart) without re-executing."""
+    st.code(sql, language="sql")
+
+    if df.empty:
+        st.info("Query returned no results")
+        return
+
+    st.subheader(f"Results ({len(df)} rows)")
+    st.dataframe(df, use_container_width=True)
+
+    numeric_cols = df.select_dtypes(include="number").columns.tolist()
+    if numeric_cols:
+        with st.expander("Chart"):
+            chart_col = st.selectbox(
+                "Select numeric column",
+                numeric_cols,
+                key=f"chart_{key_suffix}",
+            )
+            dim_col = st.selectbox(
+                "Select dimension column (optional)",
+                ["(none)"] + [c for c in df.columns if c != chart_col],
+                key=f"dim_{key_suffix}",
+            )
+            if dim_col == "(none)":
+                st.bar_chart(df[chart_col])
+            else:
+                st.bar_chart(df.set_index(dim_col)[chart_col])
+
+
 def _execute_question(
     db: DatabaseManager,
     llm: LLMService,
@@ -88,33 +118,20 @@ def _execute_question(
                 df = db.execute_query(sql)
             cache.set(q, schema_version, (sql, df))
 
-        st.code(sql, language="sql")
+        _render_result(df, sql, str(hash(q)))
 
         if df.empty:
-            st.info("Query returned no results")
             db.save_query(q, sql=sql, row_count=0)
         else:
-            st.subheader(f"Results ({len(df)} rows)")
-            st.dataframe(df, use_container_width=True)
             db.save_query(q, sql=sql, row_count=len(df))
 
-            numeric_cols = df.select_dtypes(include="number").columns.tolist()
-            if numeric_cols:
-                with st.expander("Chart"):
-                    chart_col = st.selectbox(
-                        "Select numeric column",
-                        numeric_cols,
-                        key=f"chart_{hash(q)}",
-                    )
-                    dim_col = st.selectbox(
-                        "Select dimension column (optional)",
-                        ["(none)"] + [c for c in df.columns if c != chart_col],
-                        key=f"dim_{hash(q)}",
-                    )
-                    if dim_col == "(none)":
-                        st.bar_chart(df[chart_col])
-                    else:
-                        st.bar_chart(df.set_index(dim_col)[chart_col])
+        # Persist for chart widget interactions across reruns
+        st.session_state.last_result = {
+            "sql": sql,
+            "df": df,
+            "question": q,
+            "from_cache": cached_result is not None,
+        }
 
     except ValueError as e:
         st.warning(str(e))
@@ -275,6 +292,14 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
             st.write(question)
         with st.chat_message("assistant"):
             _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
+    elif "last_result" in st.session_state:
+        result = st.session_state.last_result
+        with st.chat_message("user"):
+            st.write(result["question"])
+        with st.chat_message("assistant"):
+            if result.get("from_cache"):
+                st.caption("Returned from cache")
+            _render_result(result["df"], result["sql"], str(hash(result["question"])))
 
 
 def main() -> None:
