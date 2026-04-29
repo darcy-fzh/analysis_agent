@@ -65,10 +65,18 @@ button[kind], [data-testid="baseButton-secondary"] {
     font-weight: 500 !important;
 }
 
-/* Focus ring */
-input:focus-visible, textarea:focus-visible, [role="combobox"]:focus-visible {
-    box-shadow: 0 0 0 2px var(--primary-color) !important;
+/* Focus ring — subtle, no red */
+input:focus-visible, textarea:focus-visible {
+    box-shadow: 0 0 0 1px var(--secondary-background-color) !important;
     border-radius: 8px;
+}
+/* Kill red outline on selectbox / dropdown */
+[data-baseweb="select"] div:focus-visible,
+[role="combobox"]:focus-visible,
+[role="listbox"]:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: var(--secondary-background-color) !important;
 }
 
 /* Compact sidebar buttons */
@@ -109,21 +117,36 @@ h1 + div {
     opacity: 0.6;
 }
 
-/* Chat — hide avatars */
-[data-testid="stChatMessageAvatar"] {
-    display: none;
+/* Chat — hide avatars and icons */
+[data-testid="stChatMessageAvatar"],
+[data-testid="chatAvatarIcon-user"],
+[data-testid="chatAvatarIcon-assistant"],
+.stDeployedAppMessageAvatar {
+    display: none !important;
 }
 
-/* Chat message bubbles — subtle, theme-adaptive */
+/* Chat rows — force left for both user and assistant */
 [data-testid="stChatMessage"] {
     max-width: 80%;
     background: transparent !important;
+    margin-left: 0 !important;
+    margin-right: auto !important;
+    justify-content: flex-start !important;
 }
 
+/* Override Streamlit row-reverse for user messages */
+[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]),
+section[data-testid="stChatMessage"] {
+    flex-direction: row !important;
+}
+
+/* Chat bubbles — muted, no bright background */
 [data-testid="stChatMessage"] > div {
-    background-color: var(--secondary-background-color) !important;
-    border-radius: 10px !important;
-    padding: 0.5rem 1rem !important;
+    background: transparent !important;
+    border-radius: 8px !important;
+    padding: 0.4rem 0.9rem !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 </style>
 """
