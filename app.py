@@ -67,7 +67,7 @@ button[kind], [data-testid="baseButton-secondary"] {
 
 /* Focus ring */
 input:focus-visible, textarea:focus-visible, [role="combobox"]:focus-visible {
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5) !important;
+    box-shadow: 0 0 0 2px var(--primary-color) !important;
     border-radius: 8px;
 }
 
@@ -77,9 +77,9 @@ input:focus-visible, textarea:focus-visible, [role="combobox"]:focus-visible {
     padding-bottom: 0.2rem !important;
 }
 
-/* Sidebar — dark bg like DeepSeek */
+/* Sidebar — subtle bg, adapts to theme */
 [data-testid="stSidebar"] {
-    background-color: #f8f9fa;
+    background-color: var(--secondary-background-color);
 }
 
 /* Dataframe */
@@ -92,17 +92,28 @@ input:focus-visible, textarea:focus-visible, [role="combobox"]:focus-visible {
     background: transparent;
 }
 
-/* Title — match api-docs.deepseek.com heading style */
+/* Title — adaptive to theme */
 h1 {
     font-size: 24px !important;
     font-weight: 600 !important;
     letter-spacing: -0.02em;
-    color: #1a1a1a;
+    color: var(--text-color);
 }
 
-/* Subtitle / caption under title */
+/* Subtitle */
 h1 + div {
-    color: #6b7280;
+    opacity: 0.6;
+}
+
+/* Chat — hide avatars */
+[data-testid="stChatMessageAvatar"] {
+    display: none;
+}
+
+/* Chat message alignment — user right, assistant left */
+[data-testid="stChatMessage"] {
+    max-width: 80%;
+    border-radius: 12px !important;
 }
 </style>
 """
@@ -271,7 +282,7 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
             if search:
                 if filtered:
                     for t in filtered:
-                        hint = f"📊 {t['TABLE_NAME']}"
+                        hint = f"{t['TABLE_NAME']}"
                         if t.get("TABLE_ROWS") is not None:
                             hint += f"  ·  {t['TABLE_ROWS']:,} rows"
                         if st.button(hint, key=f"ac_{t['TABLE_NAME']}", use_container_width=True):
@@ -283,7 +294,7 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
             else:
                 for t in tables:
                     tbl_name = t["TABLE_NAME"]
-                    label = f"📊 {tbl_name}"
+                    label = f"{tbl_name}"
                     if t.get("TABLE_ROWS") is not None:
                         label += f"  ({t['TABLE_ROWS']:,} rows)"
                     if st.button(label, key=f"tbl_{tbl_name}", use_container_width=True):
@@ -418,18 +429,26 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         metric_sql = None
 
     if question:
-        with st.chat_message("user"):
-            st.write(question)
-        with st.chat_message("assistant"):
-            _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
+        _, right = st.columns([1, 3])
+        with right:
+            with st.chat_message("user", avatar=None):
+                st.write(question)
+        left, _ = st.columns([3, 1])
+        with left:
+            with st.chat_message("assistant", avatar=None):
+                _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
     elif "last_result" in st.session_state:
         result = st.session_state.last_result
-        with st.chat_message("user"):
-            st.write(result["question"])
-        with st.chat_message("assistant"):
-            if result.get("from_cache"):
-                st.caption("Returned from cache")
-            _render_result(result["df"], result["sql"], str(hash(result["question"])))
+        _, right = st.columns([1, 3])
+        with right:
+            with st.chat_message("user", avatar=None):
+                st.write(result["question"])
+        left, _ = st.columns([3, 1])
+        with left:
+            with st.chat_message("assistant", avatar=None):
+                if result.get("from_cache"):
+                    st.caption("Returned from cache")
+                _render_result(result["df"], result["sql"], str(hash(result["question"])))
 
 
 def main() -> None:
