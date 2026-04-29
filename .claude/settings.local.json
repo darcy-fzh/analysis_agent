@@ -13,7 +13,8 @@
       "Bash(brew install:*)",
       "Bash(git remote:*)",
       "Bash(git push:*)",
-      "Bash(ssh -o ConnectTimeout=10 -T git@github.com)"
+      "Bash(ssh -o ConnectTimeout=10 -T git@github.com)",
+      "Bash(python3 -m py_compile src/metrics.py)"
     ]
   }
 }

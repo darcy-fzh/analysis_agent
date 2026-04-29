@@ -41,6 +41,15 @@ CREATE TABLE IF NOT EXISTS products (
     price DECIMAL(10, 2),
     cost DECIMAL(10, 2)
 );
+
+CREATE TABLE IF NOT EXISTS query_history (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    question TEXT NOT NULL,
+    sql_text TEXT,
+    result_rows INT,
+    error TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 DANGEROUS_KEYWORDS = [
@@ -237,12 +246,35 @@ class DatabaseManager:
 
         return "\n".join(parts)
 
+    def save_query(self, question: str, sql: str | None = None,
+                   row_count: int | None = None, error: str | None = None) -> None:
+        """Save a query to the history table."""
+        conn = self._get_conn()
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO query_history (question, sql_text, result_rows, error) "
+                "VALUES (%s, %s, %s, %s)",
+                (question, sql, row_count, error),
+            )
+            conn.commit()
+
+    def get_recent_queries(self, limit: int = 10) -> list[dict]:
+        """Return recent queries from history."""
+        conn = self._get_conn()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT question, sql_text, result_rows, error, created_at "
+                "FROM query_history ORDER BY id DESC LIMIT %s",
+                (limit,),
+            )
+            return cur.fetchall()
+
     def get_table_stats(self) -> dict[str, int]:
         """Return row counts for all tables."""
         conn = self._get_conn()
         stats = {}
         with conn.cursor() as cur:
-            for table in ("orders", "customers", "products"):
+            for table in ("orders", "customers", "products", "query_history"):
                 cur.execute(f"SELECT COUNT(*) AS cnt FROM {table}")
                 stats[table] = cur.fetchone()["cnt"]
         return stats

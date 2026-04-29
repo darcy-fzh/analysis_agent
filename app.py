@@ -6,6 +6,7 @@ import streamlit as st
 from src.cache import QueryCache
 from src.database import DatabaseManager
 from src.llm import LLMService
+from src.metrics import get_metric_list, build_sql, get_chart_type
 
 logging.basicConfig(
     level=logging.INFO,
@@ -37,6 +38,82 @@ def get_llm() -> LLMService:
 @st.cache_resource
 def get_cache() -> QueryCache:
     return QueryCache(ttl=300)
+
+
+def _execute_question(
+    db: DatabaseManager,
+    llm: LLMService,
+    cache: QueryCache,
+    q: str,
+    use_metric_sql: str | None = None,
+) -> None:
+    """Run a single question through the pipeline and render the result."""
+    try:
+        schema = db.get_schema_context()
+        schema_version = str(hash(schema))
+
+        cached_result = cache.get(q, schema_version)
+        if cached_result is not None:
+            st.caption("Returned from cache")
+            sql, df = cached_result
+        elif use_metric_sql:
+            sql = use_metric_sql
+            valid, err_msg = DatabaseManager.validate_sql(sql)
+            if not valid:
+                st.error(err_msg)
+                return
+            with st.spinner("Running metric query..."):
+                df = db.execute_query(sql)
+            cache.set(q, schema_version, (sql, df))
+        else:
+            with st.spinner("AI is generating SQL..."):
+                sql = llm.generate_sql(q, schema)
+
+            valid, err_msg = DatabaseManager.validate_sql(sql)
+            if not valid:
+                st.error(err_msg)
+                db.save_query(q, error=err_msg)
+                return
+
+            with st.spinner("Querying database..."):
+                df = db.execute_query(sql)
+            cache.set(q, schema_version, (sql, df))
+
+        st.code(sql, language="sql")
+
+        if df.empty:
+            st.info("Query returned no results")
+            db.save_query(q, sql_text=sql, row_count=0)
+        else:
+            st.subheader(f"Results ({len(df)} rows)")
+            st.dataframe(df, use_container_width=True)
+            db.save_query(q, sql_text=sql, row_count=len(df))
+
+            numeric_cols = df.select_dtypes(include="number").columns.tolist()
+            if numeric_cols:
+                with st.expander("Chart"):
+                    chart_col = st.selectbox(
+                        "Select numeric column",
+                        numeric_cols,
+                        key=f"chart_{hash(q)}",
+                    )
+                    dim_col = st.selectbox(
+                        "Select dimension column (optional)",
+                        ["(none)"] + [c for c in df.columns if c != chart_col],
+                        key=f"dim_{hash(q)}",
+                    )
+                    if dim_col == "(none)":
+                        st.bar_chart(df[chart_col])
+                    else:
+                        st.bar_chart(df.set_index(dim_col)[chart_col])
+
+    except ValueError as e:
+        st.warning(str(e))
+        db.save_query(q, error=str(e))
+    except Exception as e:
+        st.error(f"Query failed: {e}")
+        db.save_query(q, error=str(e))
+        logger.exception("Query pipeline failed")
 
 
 def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
@@ -75,6 +152,35 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
 
         st.divider()
 
+        with st.expander("Metrics"):
+            for m in get_metric_list():
+                label = f"{m['name']} — {m['description']}"
+                if st.button(label, key=f"metric_{m['name']}", use_container_width=True):
+                    st.session_state.pending_question = m["name"]
+                    st.session_state.pending_metric_sql = build_sql(m["name"])
+                    st.rerun()
+
+        st.divider()
+
+        st.subheader("Query History")
+        try:
+            recent = db.get_recent_queries(10)
+            for row in recent:
+                label = row["question"][:60] + ("..." if len(row["question"]) > 60 else "")
+                status = "ERR" if row["error"] else f"{row['result_rows'] or 0}r"
+                if st.button(
+                    f"[{status}] {label}",
+                    key=f"hist_{row['created_at']}",
+                    use_container_width=True,
+                ):
+                    st.session_state.pending_question = row["question"]
+                    st.session_state.pending_metric_sql = None
+                    st.rerun()
+        except Exception:
+            st.caption("History unavailable")
+
+        st.divider()
+
         with st.expander("Database Schema"):
             try:
                 schema = db.get_schema_context()
@@ -87,73 +193,22 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     st.title("Data Analysis AI Agent")
     st.caption("Ask questions in natural language — AI generates SQL and queries the database")
 
-    if "query_history" not in st.session_state:
-        st.session_state.query_history = []
-
     question = st.chat_input("Ask a data question...")
 
+    # Handle metric or history clicks (rerouted via session state)
+    if "pending_question" in st.session_state and st.session_state.pending_question:
+        question = st.session_state.pending_question
+        metric_sql = st.session_state.pending_metric_sql
+        st.session_state.pending_question = None
+        st.session_state.pending_metric_sql = None
+    else:
+        metric_sql = None
+
     if question:
-        st.session_state.query_history.append(question)
-
-    for idx, q in enumerate(reversed(st.session_state.query_history)):
         with st.chat_message("user"):
-            st.write(q)
-
+            st.write(question)
         with st.chat_message("assistant"):
-            try:
-                schema = db.get_schema_context()
-                schema_version = str(hash(schema))
-
-                cached_result = cache.get(q, schema_version)
-                if cached_result is not None:
-                    st.caption("Returned from cache")
-                    sql, df = cached_result
-                else:
-                    with st.spinner("AI is generating SQL..."):
-                        sql = llm.generate_sql(q, schema)
-
-                    valid, err_msg = DatabaseManager.validate_sql(sql)
-                    if not valid:
-                        st.error(err_msg)
-                        continue
-
-                    with st.spinner("Querying database..."):
-                        df = db.execute_query(sql)
-                    cache.set(q, schema_version, (sql, df))
-
-                st.code(sql, language="sql")
-
-                if df.empty:
-                    st.info("Query returned no results")
-                else:
-                    st.subheader(f"Results ({len(df)} rows)")
-                    st.dataframe(df, use_container_width=True)
-
-                    numeric_cols = df.select_dtypes(include="number").columns.tolist()
-                    if numeric_cols:
-                        with st.expander("Chart"):
-                            chart_col = st.selectbox(
-                                "Select numeric column",
-                                numeric_cols,
-                                key=f"chart_{idx}",
-                            )
-                            dim_col = st.selectbox(
-                                "Select dimension column (optional)",
-                                ["(none)"] + [c for c in df.columns if c != chart_col],
-                                key=f"dim_{idx}",
-                            )
-                            if dim_col == "(none)":
-                                st.bar_chart(df[chart_col])
-                            else:
-                                st.bar_chart(
-                                    df.set_index(dim_col)[chart_col]
-                                )
-
-            except ValueError as e:
-                st.warning(str(e))
-            except Exception as e:
-                st.error(f"Query failed: {e}")
-                logger.exception("Query pipeline failed")
+            _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
 
 
 def main() -> None:
