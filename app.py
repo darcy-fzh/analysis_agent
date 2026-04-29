@@ -17,21 +17,19 @@ logger = logging.getLogger(__name__)
 
 CUSTOM_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-
 html, body, [class*="css"] {
     font-family:
-        "Inter",
         system-ui,
         -apple-system,
-        BlinkMacSystemFont,
         "Segoe UI",
         Roboto,
-        Oxygen,
         Ubuntu,
         Cantarell,
-        "Open Sans",
+        "Noto Sans",
+        sans-serif,
+        BlinkMacSystemFont,
         "Helvetica Neue",
+        Arial,
         sans-serif;
     font-size: 14px;
     -webkit-font-smoothing: antialiased;
@@ -90,19 +88,6 @@ input:focus-visible, textarea:focus-visible, [role="combobox"]:focus-visible {
 
 /* Title — match api-docs.deepseek.com heading style */
 h1 {
-    font-family:
-        system-ui,
-        -apple-system,
-        "Segoe UI",
-        Roboto,
-        Ubuntu,
-        Cantarell,
-        "Noto Sans",
-        sans-serif,
-        BlinkMacSystemFont,
-        "Helvetica Neue",
-        Arial,
-        sans-serif !important;
     font-size: 24px !important;
     font-weight: 600 !important;
     letter-spacing: -0.02em;
@@ -111,12 +96,6 @@ h1 {
 
 /* Subtitle / caption under title */
 h1 + div {
-    font-family:
-        system-ui,
-        -apple-system,
-        "Segoe UI",
-        Roboto,
-        sans-serif !important;
     color: #6b7280;
 }
 </style>
