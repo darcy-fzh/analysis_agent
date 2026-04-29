@@ -160,24 +160,39 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
             search = st.text_input(
                 "Search tables",
                 key="table_search",
-                placeholder="Filter tables...",
+                placeholder="Type to search...",
                 label_visibility="collapsed",
             )
+
             filtered = [
                 t for t in tables
                 if not search or search.lower() in t["TABLE_NAME"].lower()
             ]
-            for t in filtered:
-                tbl_name = t["TABLE_NAME"]
-                label = f"{tbl_name}"
-                if t.get("TABLE_ROWS") is not None:
-                    label += f"  ({t['TABLE_ROWS']:,} rows)"
-                if st.button(label, key=f"tbl_{tbl_name}", use_container_width=True):
-                    if st.session_state.get("sidebar_selected_table") == tbl_name:
-                        st.session_state.sidebar_selected_table = None
-                    else:
-                        st.session_state.sidebar_selected_table = tbl_name
-                    st.rerun()
+
+            if search:
+                if filtered:
+                    for t in filtered:
+                        hint = f"📊 {t['TABLE_NAME']}"
+                        if t.get("TABLE_ROWS") is not None:
+                            hint += f"  ·  {t['TABLE_ROWS']:,} rows"
+                        if st.button(hint, key=f"ac_{t['TABLE_NAME']}", use_container_width=True):
+                            st.session_state.sidebar_selected_table = t["TABLE_NAME"]
+                            st.session_state.table_search = ""
+                            st.rerun()
+                else:
+                    st.caption("No tables match")
+            else:
+                for t in tables:
+                    tbl_name = t["TABLE_NAME"]
+                    label = f"📊 {tbl_name}"
+                    if t.get("TABLE_ROWS") is not None:
+                        label += f"  ({t['TABLE_ROWS']:,} rows)"
+                    if st.button(label, key=f"tbl_{tbl_name}", use_container_width=True):
+                        if st.session_state.get("sidebar_selected_table") == tbl_name:
+                            st.session_state.sidebar_selected_table = None
+                        else:
+                            st.session_state.sidebar_selected_table = tbl_name
+                        st.rerun()
 
             selected = st.session_state.get("sidebar_selected_table")
             if selected:
