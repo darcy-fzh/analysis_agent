@@ -114,10 +114,16 @@ h1 + div {
     display: none;
 }
 
-/* Chat message alignment — user right, assistant left */
+/* Chat message bubbles — subtle, theme-adaptive */
 [data-testid="stChatMessage"] {
     max-width: 80%;
-    border-radius: 12px !important;
+    background: transparent !important;
+}
+
+[data-testid="stChatMessage"] > div {
+    background-color: var(--secondary-background-color) !important;
+    border-radius: 10px !important;
+    padding: 0.5rem 1rem !important;
 }
 </style>
 """
@@ -433,26 +439,18 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         metric_sql = None
 
     if question:
-        _, right = st.columns([1, 3])
-        with right:
-            with st.chat_message("user", avatar=None):
-                st.write(question)
-        left, _ = st.columns([3, 1])
-        with left:
-            with st.chat_message("assistant", avatar=None):
-                _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
+        with st.chat_message("user", avatar=None):
+            st.write(question)
+        with st.chat_message("assistant", avatar=None):
+            _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
     elif "last_result" in st.session_state:
         result = st.session_state.last_result
-        _, right = st.columns([1, 3])
-        with right:
-            with st.chat_message("user", avatar=None):
-                st.write(result["question"])
-        left, _ = st.columns([3, 1])
-        with left:
-            with st.chat_message("assistant", avatar=None):
-                if result.get("from_cache"):
-                    st.caption("Returned from cache")
-                _render_result(result["df"], result["sql"], str(hash(result["question"])))
+        with st.chat_message("user", avatar=None):
+            st.write(result["question"])
+        with st.chat_message("assistant", avatar=None):
+            if result.get("from_cache"):
+                st.caption("Returned from cache")
+            _render_result(result["df"], result["sql"], str(hash(result["question"])))
 
 
 def main() -> None:
