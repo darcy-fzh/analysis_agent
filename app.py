@@ -17,9 +17,18 @@ logger = logging.getLogger(__name__)
 
 CUSTOM_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 html, body, [class*="css"] {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Oxygen-Sans,
+        Ubuntu,
+        Cantarell,
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
 }
 </style>
 """
@@ -129,9 +138,66 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
 
         st.subheader("Data Overview")
         try:
-            stats = db.get_table_stats()
-            for table, count in stats.items():
-                st.metric(label=table, value=count)
+            tables = db.get_tables()
+            st.metric("Tables", len(tables))
+            search = st.text_input(
+                "Search tables",
+                key="table_search",
+                placeholder="Filter tables...",
+                label_visibility="collapsed",
+            )
+            filtered = [
+                t for t in tables
+                if not search or search.lower() in t["TABLE_NAME"].lower()
+            ]
+            for t in filtered:
+                tbl_name = t["TABLE_NAME"]
+                label = f"{tbl_name}"
+                if t.get("TABLE_ROWS") is not None:
+                    label += f"  ({t['TABLE_ROWS']:,} rows)"
+                if st.button(label, key=f"tbl_{tbl_name}", use_container_width=True):
+                    if st.session_state.get("sidebar_selected_table") == tbl_name:
+                        st.session_state.sidebar_selected_table = None
+                    else:
+                        st.session_state.sidebar_selected_table = tbl_name
+                    st.rerun()
+
+            selected = st.session_state.get("sidebar_selected_table")
+            if selected:
+                st.divider()
+                st.subheader(f"{selected}")
+                table_info = next(
+                    (t for t in tables if t["TABLE_NAME"] == selected), {}
+                )
+                owner = db.get_database_name()
+                st.caption(f"**Owner:** {owner}")
+                if table_info.get("TABLE_COMMENT"):
+                    st.caption(f"**Description:** {table_info['TABLE_COMMENT']}")
+                st.caption(
+                    f"**Rows:** {table_info.get('TABLE_ROWS', '?'):,}  |  "
+                    f"**Updated:** {table_info.get('UPDATE_TIME', '—')}"
+                )
+                latest = db.get_latest_partition(selected)
+                if latest:
+                    st.caption(f"**Latest partition:** {latest}")
+
+                columns = db.get_columns(selected)
+                if columns:
+                    col_data = [
+                        {
+                            "Column": c["COLUMN_NAME"],
+                            "Type": c["DATA_TYPE"],
+                            "Nullable": c["IS_NULLABLE"],
+                            "Key": c.get("COLUMN_KEY") or "",
+                            "Default": str(c.get("COLUMN_DEFAULT") or ""),
+                        }
+                        for c in columns
+                    ]
+                    st.dataframe(col_data, use_container_width=True, hide_index=True)
+
+                if st.button("Close", key="close_tbl", use_container_width=True):
+                    st.session_state.sidebar_selected_table = None
+                    st.rerun()
         except Exception:
             st.warning("Unable to load table info")
 

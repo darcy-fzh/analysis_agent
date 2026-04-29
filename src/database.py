@@ -2,6 +2,7 @@ import logging
 import os
 import random
 from datetime import date, timedelta
+from decimal import Decimal
 
 import pandas as pd
 import pymysql
@@ -227,7 +228,17 @@ class DatabaseManager:
         with conn.cursor() as cur:
             cur.execute(sql)
             rows = cur.fetchall()
-        return pd.DataFrame(rows) if rows else pd.DataFrame()
+        if not rows:
+            return pd.DataFrame()
+        df = pd.DataFrame(rows)
+        # MySQL DECIMAL columns arrive as decimal.Decimal, which pandas
+        # treats as object dtype — convert them to float for numerics.
+        for col in df.columns:
+            if df[col].dtype == object:
+                sample = df[col].dropna().iloc[0] if not df[col].dropna().empty else None
+                if isinstance(sample, Decimal):
+                    df[col] = df[col].astype(float)
+        return df
 
     def get_schema_context(self) -> str:
         """Return schema DDL and sample rows for LLM prompt context."""
@@ -278,6 +289,64 @@ class DatabaseManager:
                 cur.execute(f"SELECT COUNT(*) AS cnt FROM {table}")
                 stats[table] = cur.fetchone()["cnt"]
         return stats
+
+    def get_tables(self) -> list[dict]:
+        """List all base tables with metadata from information_schema."""
+        conn = self._get_conn()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT TABLE_NAME, TABLE_ROWS, TABLE_COMMENT, CREATE_TIME, "
+                "UPDATE_TIME FROM information_schema.TABLES "
+                "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE' "
+                "ORDER BY TABLE_NAME"
+            )
+            return cur.fetchall()
+
+    def get_columns(self, table_name: str) -> list[dict]:
+        """Return column metadata for a given table from information_schema."""
+        conn = self._get_conn()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT, "
+                "COLUMN_COMMENT, COLUMN_KEY "
+                "FROM information_schema.COLUMNS "
+                "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s "
+                "ORDER BY ORDINAL_POSITION",
+                (table_name,),
+            )
+            return cur.fetchall()
+
+    def get_latest_partition(self, table_name: str) -> str | None:
+        """Return the maximum value of a date-like column as partition marker."""
+        conn = self._get_conn()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
+                "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s "
+                "AND (DATA_TYPE IN ('date', 'datetime', 'timestamp') "
+                "     OR (DATA_TYPE = 'char' AND CHARACTER_MAXIMUM_LENGTH = 8)) "
+                "ORDER BY ORDINAL_POSITION LIMIT 1",
+                (table_name,),
+            )
+            row = cur.fetchone()
+            if not row:
+                return None
+            col = row["COLUMN_NAME"]
+            try:
+                cur.execute(f"SELECT MAX(`{col}`) AS latest FROM `{table_name}`")
+                result = cur.fetchone()
+                if result and result["latest"]:
+                    return str(result["latest"])
+            except Exception:
+                pass
+            return None
+
+    def get_database_name(self) -> str:
+        """Return the current database name."""
+        conn = self._get_conn()
+        with conn.cursor() as cur:
+            cur.execute("SELECT DATABASE() AS db")
+            return cur.fetchone()["db"]
 
     @staticmethod
     def validate_sql(sql: str) -> tuple[bool, str]:
