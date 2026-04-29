@@ -63,6 +63,11 @@ def _render_result(df, sql: str, key_suffix: str) -> None:
     numeric_cols = df.select_dtypes(include="number").columns.tolist()
     if numeric_cols:
         with st.expander("Chart"):
+            chart_type = st.selectbox(
+                "Chart type",
+                ["bar", "line", "area", "pie"],
+                key=f"chart_type_{key_suffix}",
+            )
             chart_col = st.selectbox(
                 "Select numeric column",
                 numeric_cols,
@@ -73,10 +78,30 @@ def _render_result(df, sql: str, key_suffix: str) -> None:
                 ["(none)"] + [c for c in df.columns if c != chart_col],
                 key=f"dim_{key_suffix}",
             )
-            if dim_col == "(none)":
-                st.bar_chart(df[chart_col])
-            else:
-                st.bar_chart(df.set_index(dim_col)[chart_col])
+
+            chart_data = (
+                df.set_index(dim_col)[chart_col]
+                if dim_col != "(none)"
+                else df[chart_col]
+            )
+
+            if chart_type == "bar":
+                st.bar_chart(chart_data)
+            elif chart_type == "line":
+                st.line_chart(chart_data)
+            elif chart_type == "area":
+                st.area_chart(chart_data)
+            elif chart_type == "pie":
+                if dim_col == "(none)":
+                    st.caption("Select a dimension column for pie charts")
+                else:
+                    import matplotlib.pyplot as plt
+
+                    fig, ax = plt.subplots()
+                    ax.pie(chart_data, labels=chart_data.index, autopct="%1.1f%%")
+                    ax.axis("equal")
+                    st.pyplot(fig)
+                    plt.close(fig)
 
 
 def _execute_question(
