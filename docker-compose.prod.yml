@@ -2,8 +2,7 @@ services:
   app:
     build: .
     container_name: analytics_app
-    ports:
-      - "8501:8501"
+    network_mode: host
     env_file:
       - .env
     restart: unless-stopped
