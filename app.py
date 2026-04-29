@@ -14,6 +14,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+CUSTOM_CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+html, body, [class*="css"] {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+</style>
+"""
+
 
 @st.cache_resource
 def get_db() -> DatabaseManager:
@@ -32,56 +41,56 @@ def get_cache() -> QueryCache:
 
 def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
     with st.sidebar:
-        st.header("系统状态")
+        st.header("System Status")
 
         if db.test_connection():
-            st.success("数据库已连接")
+            st.success("Database Connected")
         else:
-            st.error("数据库连接失败")
+            st.error("Database Disconnected")
 
         st.divider()
 
-        st.subheader("数据概览")
+        st.subheader("Data Overview")
         try:
             stats = db.get_table_stats()
             for table, count in stats.items():
                 st.metric(label=table, value=count)
         except Exception:
-            st.warning("无法加载表信息")
+            st.warning("Unable to load table info")
 
         st.divider()
 
-        st.subheader("缓存")
+        st.subheader("Cache")
         cache_stats = cache.stats()
         col1, col2 = st.columns(2)
         with col1:
-            st.metric("命中", cache_stats["hits"])
+            st.metric("Hits", cache_stats["hits"])
         with col2:
-            st.metric("未命中", cache_stats["misses"])
-        st.caption(f"缓存条目: {cache_stats['size']} | TTL: {cache_stats['ttl']}s")
+            st.metric("Misses", cache_stats["misses"])
+        st.caption(f"Entries: {cache_stats['size']} | TTL: {cache_stats['ttl']}s")
 
-        if st.button("清除缓存"):
+        if st.button("Clear Cache"):
             cache.clear()
             st.rerun()
 
         st.divider()
 
-        with st.expander("数据库 Schema"):
+        with st.expander("Database Schema"):
             try:
                 schema = db.get_schema_context()
                 st.code(schema, language="sql")
             except Exception:
-                st.warning("Schema 不可用")
+                st.warning("Schema unavailable")
 
 
 def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None:
-    st.title("数据分析 AI Agent")
-    st.caption("用自然语言提问，AI 自动生成 SQL 并查询数据库")
+    st.title("Data Analysis AI Agent")
+    st.caption("Ask questions in natural language — AI generates SQL and queries the database")
 
     if "query_history" not in st.session_state:
         st.session_state.query_history = []
 
-    question = st.chat_input("输入你的数据分析问题...")
+    question = st.chat_input("Ask a data question...")
 
     if question:
         st.session_state.query_history.append(question)
@@ -97,10 +106,10 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
 
                 cached_result = cache.get(q, schema_version)
                 if cached_result is not None:
-                    st.caption("从缓存返回")
+                    st.caption("Returned from cache")
                     sql, df = cached_result
                 else:
-                    with st.spinner("AI 正在生成 SQL..."):
+                    with st.spinner("AI is generating SQL..."):
                         sql = llm.generate_sql(q, schema)
 
                     valid, err_msg = DatabaseManager.validate_sql(sql)
@@ -108,32 +117,32 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
                         st.error(err_msg)
                         continue
 
-                    with st.spinner("正在查询数据库..."):
+                    with st.spinner("Querying database..."):
                         df = db.execute_query(sql)
                     cache.set(q, schema_version, (sql, df))
 
                 st.code(sql, language="sql")
 
                 if df.empty:
-                    st.info("查询结果为空")
+                    st.info("Query returned no results")
                 else:
-                    st.subheader(f"查询结果 ({len(df)} 行)")
+                    st.subheader(f"Results ({len(df)} rows)")
                     st.dataframe(df, use_container_width=True)
 
                     numeric_cols = df.select_dtypes(include="number").columns.tolist()
                     if numeric_cols:
-                        with st.expander("可视化"):
+                        with st.expander("Chart"):
                             chart_col = st.selectbox(
-                                "选择数值列",
+                                "Select numeric column",
                                 numeric_cols,
                                 key=f"chart_{idx}",
                             )
                             dim_col = st.selectbox(
-                                "选择维度列 (可选)",
-                                ["(无)"] + [c for c in df.columns if c != chart_col],
+                                "Select dimension column (optional)",
+                                ["(none)"] + [c for c in df.columns if c != chart_col],
                                 key=f"dim_{idx}",
                             )
-                            if dim_col == "(无)":
+                            if dim_col == "(none)":
                                 st.bar_chart(df[chart_col])
                             else:
                                 st.bar_chart(
@@ -143,16 +152,18 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
             except ValueError as e:
                 st.warning(str(e))
             except Exception as e:
-                st.error(f"查询失败: {e}")
+                st.error(f"Query failed: {e}")
                 logger.exception("Query pipeline failed")
 
 
 def main() -> None:
     st.set_page_config(
-        page_title="数据分析 AI Agent",
+        page_title="Data Analysis AI Agent",
         page_icon="",
         layout="wide",
     )
+
+    st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
     db = get_db()
     llm = get_llm()
@@ -161,7 +172,7 @@ def main() -> None:
     try:
         db.init_schema()
     except Exception as e:
-        st.warning("数据库初始化失败，请检查连接配置")
+        st.warning("Database initialization failed — check connection config")
         st.code(str(e))
 
     render_sidebar(db, cache)

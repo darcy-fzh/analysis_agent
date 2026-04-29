@@ -252,9 +252,9 @@ class DatabaseManager:
         """Check that SQL is a safe SELECT statement."""
         upper = sql.strip().upper()
         if not upper.startswith("SELECT"):
-            return False, "只允许 SELECT 查询"
+            return False, "Only SELECT queries are allowed"
         for kw in DANGEROUS_KEYWORDS:
             import re
             if re.search(rf"\b{kw}\b", upper):
-                return False, f"SQL 包含禁止的关键字: {kw}"
+                return False, f"SQL contains forbidden keyword: {kw}"
         return True, ""

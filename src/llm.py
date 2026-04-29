@@ -9,20 +9,18 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """你是一个专业的 MySQL SQL 查询专家。根据用户提供的数据库表结构和自然语言问题，生成正确的 MySQL SELECT 查询语句。
+SYSTEM_PROMPT = """You are a professional MySQL SQL query expert. Generate correct MySQL SELECT queries based on the provided database schema and natural language questions.
 
-## 规则
-1. 只生成 SELECT 语句，禁止任何 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE/CREATE 操作
-2. 只返回纯 SQL 语句，不要加任何解释、注释或 markdown 代码块标记
-3. 使用正确的表名和列名，严格匹配 schema 中定义的名称
-4. 对于聚合查询（如 SUM, AVG, COUNT），始终使用有意义的别名（AS）
-5. 对于比例/比率计算（如客单价），使用 CAST(... AS DECIMAL(15,4)) 确保精度，例如：CAST(SUM(gmv) AS DECIMAL(15,4)) / NULLIF(COUNT(DISTINCT customer_id), 0)
-6. 对于包含中文字符的查询条件，使用正确的字符串比较
-7. 如果问题无法转换为 SQL，返回：-- CANNOT_CONVERT
-8. 使用 NULLIF 处理分母为零的情况
-9. LIMIT 默认不超过 1000 行
-10. 如果用户问"所有"/"全部"数据，LIMIT 设为 100
-11. order_date 和 registration_date 是 CHAR(8) 格式的字符串（yyyymmdd），日期比较使用字符串即可，例如：WHERE order_date >= '20240101'"""
+## Rules
+1. Only generate SELECT statements. Never generate INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE/CREATE.
+2. Return ONLY the raw SQL statement — no explanations, no comments, no markdown code fences.
+3. Use exact table and column names as defined in the schema.
+4. For aggregation queries (SUM, AVG, COUNT), always use meaningful aliases (AS).
+5. For ratio/rate calculations, use CAST(... AS DECIMAL(15,4)) for precision, e.g.: CAST(SUM(gmv) AS DECIMAL(15,4)) / NULLIF(COUNT(DISTINCT customer_id), 0)
+6. Use NULLIF to handle divide-by-zero cases.
+7. Default LIMIT is 1000 rows. If the user asks for "all" data, set LIMIT 100.
+8. order_date and registration_date are CHAR(8) strings in yyyymmdd format. Use string comparison for dates, e.g.: WHERE order_date >= '20240101'
+9. If the question cannot be converted to SQL, return: -- CANNOT_CONVERT"""
 
 
 class LLMService:
@@ -30,16 +28,16 @@ class LLMService:
         self.model = model or os.environ.get("DASHSCOPE_MODEL", "deepseek-v4-pro")
 
     def generate_sql(self, question: str, schema_context: str) -> str:
-        """Convert natural language question to SQL using Alibaba Bailian."""
-        user_message = f"""## 数据库 Schema
+        """Convert natural language question to SQL."""
+        user_message = f"""## Database Schema
 
 {schema_context}
 
-## 用户问题
+## User Question
 
 {question}
 
-请生成 SQL 查询："""
+Generate SQL query:"""
 
         try:
             response = Generation.call(
@@ -58,7 +56,7 @@ class LLMService:
                     response.status_code,
                     response.message,
                 )
-                raise RuntimeError(f"API 调用失败: {response.message}")
+                raise RuntimeError(f"API call failed: {response.message}")
 
             raw = response.output.choices[0].message.content.strip()
             logger.info("LLM raw response: %s", raw)
@@ -66,7 +64,7 @@ class LLMService:
             sql = self._extract_sql(raw)
 
             if sql == "-- CANNOT_CONVERT":
-                raise ValueError("无法将当前问题转换为 SQL 查询，请尝试更具体的表述。")
+                raise ValueError("Unable to convert this question to SQL. Please try a more specific query.")
 
             return sql
 
@@ -74,12 +72,11 @@ class LLMService:
             raise
         except Exception as e:
             logger.exception("LLM generation failed")
-            raise RuntimeError(f"SQL 生成失败: {e}") from e
+            raise RuntimeError(f"SQL generation failed: {e}") from e
 
     @staticmethod
     def _extract_sql(raw: str) -> str:
         """Extract pure SQL from LLM response, handling markdown code blocks."""
-        # Strip markdown code fences if present
         match = re.search(r"```(?:sql)?\s*\n?(.*?)\n?```", raw, re.DOTALL | re.IGNORECASE)
         if match:
             return match.group(1).strip()
