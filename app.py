@@ -164,10 +164,13 @@ h3 {
 }
 
 /* Collapse the chat form's own container — its stHorizontalBlock is fixed
-   at the viewport bottom by JS, so the wrapper must be invisible. */
+   to the viewport bottom by JS (position:fixed removes it from flow).
+   height:0 + min-height:0 ensures nothing remains visible at the top. */
 [data-testid="stMain"] [data-testid="stForm"],
 [data-testid="stMain"] [data-testid="stForm"] > div,
 [data-testid="stMain"] [data-testid="stForm"] [data-testid="stVerticalBlock"] {
+    height: 0 !important;
+    min-height: 0 !important;
     border: none !important;
     padding: 0 !important;
     margin: 0 !important;
@@ -185,14 +188,24 @@ CHAT_BAR_JS = """
 <script>
 (function() {
     var doc = window.parent.document;
+
+    // Disconnect previous observer from prior reruns
     if (window.parent._chatBarObserver) {
         window.parent._chatBarObserver.disconnect();
     }
+    if (window.parent._chatBarTimer) {
+        clearTimeout(window.parent._chatBarTimer);
+    }
 
     function applyFixed(el) {
+        // left = sidebar right edge so we never overlap the sidebar
+        var sidebar = doc.querySelector('[data-testid="stSidebar"]');
+        var sidebarRight = sidebar ? sidebar.getBoundingClientRect().right : 0;
+
         el.style.setProperty('position',         'fixed',                             'important');
+        el.style.setProperty('top',              'auto',                              'important');
         el.style.setProperty('bottom',           '0',                                 'important');
-        el.style.setProperty('left',             '0',                                 'important');
+        el.style.setProperty('left',             sidebarRight + 'px',                 'important');
         el.style.setProperty('right',            '0',                                 'important');
         el.style.setProperty('z-index',          '999',                               'important');
         el.style.setProperty('padding',          '10px 16px 12px',                    'important');
@@ -209,31 +222,26 @@ CHAT_BAR_JS = """
     function fix() {
         var main = doc.querySelector('[data-testid="stMain"]');
         if (!main) return;
+        // Find the last stHorizontalBlock inside stMain that contains a stTextInput.
+        // This uniquely identifies the chat bar (chart columns use selectboxes, not text inputs).
         var blocks = main.querySelectorAll('[data-testid="stHorizontalBlock"]');
         for (var i = blocks.length - 1; i >= 0; i--) {
             if (blocks[i].querySelector('[data-testid="stTextInput"]')) {
-                // Walk up: fix stForm if present, otherwise fix the stHorizontalBlock.
-                // This ensures the whole form container is removed from document flow,
-                // not just the inner row — preventing a ghost box at the top.
-                var target = blocks[i];
-                var cur = blocks[i].parentElement;
-                while (cur && cur !== doc.body) {
-                    if (cur.getAttribute('data-testid') === 'stMain') break;
-                    if (cur.getAttribute('data-testid') === 'stForm') {
-                        target = cur;
-                        break;
-                    }
-                    cur = cur.parentElement;
-                }
-                applyFixed(target);
+                applyFixed(blocks[i]);
                 return;
             }
         }
     }
 
+    // Debounce so rapid DOM mutations don't thrash style recalculations
+    function schedFix() {
+        if (window.parent._chatBarTimer) clearTimeout(window.parent._chatBarTimer);
+        window.parent._chatBarTimer = setTimeout(fix, 50);
+    }
+
     fix();
-    setTimeout(fix, 0);   // also run after current render cycle
-    window.parent._chatBarObserver = new MutationObserver(fix);
+    setTimeout(fix, 50);   // re-run after current render cycle
+    window.parent._chatBarObserver = new MutationObserver(schedFix);
     window.parent._chatBarObserver.observe(doc.body, { childList: true, subtree: true });
 })();
 </script>
