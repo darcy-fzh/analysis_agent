@@ -458,7 +458,17 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     st.title("Data Analysis AI Agent")
     st.caption("Ask questions in natural language — AI generates SQL and queries the database")
 
-    # ── Handle metric or history clicks (must be before chat bar) ──
+    # ── Step 1: Get question from chat input (always at page bottom) ──
+    question = st.chat_input("Ask a data question...")
+
+    if question:
+        st.session_state.analysis_running = True
+        st.session_state.stop_requested = False
+        st.session_state.pending_question = question
+        st.session_state.pending_metric_sql = None
+        st.rerun()
+
+    # ── Step 2: Handle metric/history clicks or pending chat question ──
     question = None
     metric_sql = None
     if "pending_question" in st.session_state and st.session_state.pending_question:
@@ -469,15 +479,24 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         st.session_state.analysis_running = True
         st.session_state.stop_requested = False
 
+    # ── Stop button (appears during analysis, right above chat input) ──
+    if st.session_state.get("analysis_running"):
+        col1, col2 = st.columns([9, 1])
+        with col2:
+            if st.button("■", key="stop_btn", help="Stop analysis"):
+                st.session_state.stop_requested = True
+                st.rerun()
+
     # ── Render chat messages ──
     if question:
         _render_user(question)
         with st.chat_message("assistant", avatar=None):
             _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
         st.session_state.analysis_running = False
-        if not st.session_state.get("stop_requested"):
-            st.session_state.chat_input_value = ""
-            st.session_state.chat_input_last = ""
+        if st.session_state.get("stop_requested"):
+            st.session_state.stopped_question = question
+        else:
+            st.session_state.stopped_question = None
     elif "last_result" in st.session_state:
         result = st.session_state.last_result
         _render_user(result["question"])
@@ -485,54 +504,9 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
             if result.get("from_cache"):
                 st.caption("Returned from cache")
             _render_result(result["df"], result["sql"], str(hash(result["question"])), insight=result.get("insight", ""))
-
-    # ── Chat bar at bottom ──
-    st.markdown("<br>", unsafe_allow_html=True)
-    cols = st.columns([30, 1])
-
-    if st.session_state.get("analysis_running"):
-        with cols[0]:
-            st.text_input(
-                "Message",
-                value=st.session_state.get("chat_input_value", ""),
-                placeholder="AI is analyzing...",
-                label_visibility="collapsed",
-                key="chat_disabled",
-                disabled=True,
-            )
-        with cols[1]:
-            if st.button("■", key="stop_btn", help="Stop analysis"):
-                st.session_state.stop_requested = True
-                st.rerun()
-    else:
-        with cols[0]:
-            user_input = st.text_input(
-                "Message",
-                value=st.session_state.get("chat_input_value", ""),
-                placeholder="Ask a data question...",
-                label_visibility="collapsed",
-                key="chat_input",
-            )
-        with cols[1]:
-            send_clicked = st.button("↑", key="send_btn", help="Send")
-
-        # Detect Enter key (value changed) or send button click
-        current = user_input or ""
-        last = st.session_state.get("chat_input_last", "")
-        submitted = None
-        if send_clicked and current.strip():
-            submitted = current.strip()
-        elif current.strip() and current != last:
-            submitted = current.strip()
-
-        if submitted:
-            st.session_state.chat_input_last = submitted
-            st.session_state.chat_input_value = submitted
-            st.session_state.pending_question = submitted
-            st.session_state.pending_metric_sql = None
-            st.session_state.analysis_running = True
-            st.session_state.stop_requested = False
-            st.rerun()
+    elif st.session_state.get("stopped_question"):
+        _render_user(st.session_state.stopped_question)
+        st.info("Analysis stopped — you can edit your question below and try again.")
 
 
 def main() -> None:
