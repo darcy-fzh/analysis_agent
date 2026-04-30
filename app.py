@@ -9,7 +9,7 @@ import streamlit as st
 from src.cache import QueryCache
 from src.database import DatabaseManager
 from src.llm import LLMService
-from src.metrics import get_metric_list, build_sql, get_chart_type
+from src.metrics import get_metric_list, build_sql
 
 logging.basicConfig(
     level=logging.INFO,
@@ -244,9 +244,11 @@ def _render_result(df, sql: str, key_suffix: str, insight: str = "") -> None:
     numeric_cols = df.select_dtypes(include="number").columns.tolist()
     if numeric_cols:
         with st.expander("Chart"):
+            import plotly.express as px
+
             chart_type = st.selectbox(
                 "Chart type",
-                ["bar", "line", "area", "pie"],
+                ["bar", "line", "area", "scatter", "pie", "box", "histogram"],
                 key=f"chart_type_{key_suffix}",
             )
             chart_col = st.selectbox(
@@ -260,29 +262,74 @@ def _render_result(df, sql: str, key_suffix: str, insight: str = "") -> None:
                 key=f"dim_{key_suffix}",
             )
 
-            chart_data = (
-                df.set_index(dim_col)[chart_col]
-                if dim_col != "(none)"
-                else df[chart_col]
-            )
+            col1, col2 = st.columns(2)
+            with col1:
+                chart_title = st.text_input(
+                    "Chart title", "",
+                    key=f"chart_title_{key_suffix}",
+                    placeholder="Optional title",
+                )
+            with col2:
+                chart_color = st.color_picker(
+                    "Color", "#1f77b4",
+                    key=f"chart_color_{key_suffix}",
+                )
 
-            if chart_type == "bar":
-                st.bar_chart(chart_data)
-            elif chart_type == "line":
-                st.line_chart(chart_data)
-            elif chart_type == "area":
-                st.area_chart(chart_data)
-            elif chart_type == "pie":
-                if dim_col == "(none)":
-                    st.caption("Select a dimension column for pie charts")
+            x_col = dim_col if dim_col != "(none)" else None
+
+            try:
+                if chart_type == "bar":
+                    fig = px.bar(
+                        df, x=x_col, y=chart_col, title=chart_title or None,
+                        color_discrete_sequence=[chart_color],
+                    )
+                elif chart_type == "line":
+                    fig = px.line(
+                        df, x=x_col, y=chart_col, title=chart_title or None,
+                        color_discrete_sequence=[chart_color],
+                        markers=True,
+                    )
+                elif chart_type == "area":
+                    fig = px.area(
+                        df, x=x_col, y=chart_col, title=chart_title or None,
+                        color_discrete_sequence=[chart_color],
+                    )
+                elif chart_type == "scatter":
+                    fig = px.scatter(
+                        df, x=x_col, y=chart_col, title=chart_title or None,
+                        color_discrete_sequence=[chart_color],
+                    )
+                elif chart_type == "pie":
+                    if x_col is None:
+                        st.caption("Select a dimension column for pie charts")
+                        fig = None
+                    else:
+                        fig = px.pie(
+                            df, names=x_col, values=chart_col,
+                            title=chart_title or None,
+                            color_discrete_sequence=[chart_color],
+                        )
+                elif chart_type == "box":
+                    fig = px.box(
+                        df, x=x_col, y=chart_col, title=chart_title or None,
+                        color_discrete_sequence=[chart_color],
+                    )
+                elif chart_type == "histogram":
+                    fig = px.histogram(
+                        df, x=chart_col, title=chart_title or None,
+                        color_discrete_sequence=[chart_color],
+                    )
                 else:
-                    import matplotlib.pyplot as plt
+                    fig = None
 
-                    fig, ax = plt.subplots()
-                    ax.pie(chart_data, labels=chart_data.index, autopct="%1.1f%%")
-                    ax.axis("equal")
-                    st.pyplot(fig)
-                    plt.close(fig)
+                if fig is not None:
+                    fig.update_layout(
+                        margin=dict(l=0, r=0, t=40 if chart_title else 20, b=0),
+                        template="plotly_white",
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+            except Exception:
+                st.warning("Chart rendering failed — try different columns")
 
 def _stop_requested() -> bool:
     """Check if user clicked stop, and show a message if so."""
