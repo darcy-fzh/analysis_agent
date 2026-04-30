@@ -20,6 +20,154 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# ── i18n ─────────────────────────────────────────────────────────
+LANG = {
+    "en": {
+        "language": "Language",
+        "title": "Data Analysis",
+        "caption": "Ask in natural language — AI generates SQL, queries the database, and visualizes results",
+        "status": "Status",
+        "connected": "Connected",
+        "disconnected": "Disconnected",
+        "overview": "Overview",
+        "tables": "Tables",
+        "search_placeholder": "Search...",
+        "search_label": "Search tables",
+        "no_tables_match": "No tables match",
+        "close": "Close",
+        "unable_load_table": "Unable to load table info",
+        "metrics": "Metrics",
+        "query_history": "Query History",
+        "clear_all": "Clear All",
+        "err": "ERR",
+        "delete_entry": "Delete this entry",
+        "history_unavailable": "History unavailable",
+        "stop": "Stop",
+        "analyzing": "AI is analyzing...",
+        "ask_question": "Ask a data question...",
+        "analysis_stopped": "Analysis stopped — you can edit your question below and try again.",
+        "db_init_failed": "Database initialization failed — check connection config",
+        "summary": "Summary",
+        "sql": "SQL",
+        "no_results": "Query returned no results",
+        "results": "Results",
+        "rows_returned": "{} rows returned",
+        "rows": "rows",
+        "chart": "Chart",
+        "chart_type": "Chart type",
+        "select_numeric": "Select numeric column",
+        "select_dimension": "Select dimension column (optional)",
+        "none": "(none)",
+        "chart_title": "Chart title",
+        "optional_title": "Optional title",
+        "color": "Color",
+        "pie_needs_dimension": "Select a dimension column for pie charts",
+        "chart_failed": "Chart rendering failed — try different columns",
+        "returned_from_cache": "Returned from cache",
+        "analyzing_results": "AI is analyzing results...",
+        "running_metric": "Running metric query...",
+        "generating_sql": "AI is generating SQL...",
+        "querying_db": "Querying database...",
+        "analysis_stopped_check": "Analysis stopped",
+        "query_failed": "Query failed",
+        "column": "Column",
+        "type": "Type",
+        "nullable": "Nullable",
+        "key": "Key",
+        "default": "Default",
+        "latest": "Latest",
+        "chart_types": ["bar", "line", "area", "scatter", "pie", "box", "histogram"],
+        "chat_response": (
+            "I'm a data analysis assistant — I turn your questions "
+            "into SQL and run them against the database.\n\n"
+            "Try something like:\n\n"
+            "• *What was the total GMV last month?*\n"
+            "• *Show me top 10 customers by orders*\n"
+            "• *Average order value by channel*\n"
+            "• *Monthly GMV trend for 2025*\n\n"
+            "Ask me anything about your data."
+        ),
+    },
+    "zh": {
+        "language": "语言",
+        "title": "数据分析",
+        "caption": "用自然语言提问 — AI 自动生成 SQL、查询数据库并可视化结果",
+        "status": "状态",
+        "connected": "已连接",
+        "disconnected": "未连接",
+        "overview": "数据概览",
+        "tables": "数据表",
+        "search_placeholder": "搜索...",
+        "search_label": "搜索数据表",
+        "no_tables_match": "未找到匹配的表",
+        "close": "关闭",
+        "unable_load_table": "无法加载表信息",
+        "metrics": "指标查询",
+        "query_history": "查询历史",
+        "clear_all": "清空全部",
+        "err": "错误",
+        "delete_entry": "删除此条目",
+        "history_unavailable": "历史记录不可用",
+        "stop": "停止",
+        "analyzing": "AI 分析中...",
+        "ask_question": "输入你的数据问题...",
+        "analysis_stopped": "分析已停止 — 你可以在下方编辑问题后重新提交",
+        "db_init_failed": "数据库初始化失败 — 请检查连接配置",
+        "summary": "摘要",
+        "sql": "SQL",
+        "no_results": "查询未返回任何结果",
+        "results": "查询结果",
+        "rows_returned": "返回 {} 行",
+        "rows": "行",
+        "chart": "图表",
+        "chart_type": "图表类型",
+        "select_numeric": "选择数值列",
+        "select_dimension": "选择维度列（可选）",
+        "none": "(无)",
+        "chart_title": "图表标题",
+        "optional_title": "可选标题",
+        "color": "颜色",
+        "pie_needs_dimension": "饼图需要选择一个维度列",
+        "chart_failed": "图表渲染失败 — 请尝试其他列",
+        "returned_from_cache": "从缓存返回",
+        "analyzing_results": "AI 正在分析结果...",
+        "running_metric": "正在执行指标查询...",
+        "generating_sql": "AI 正在生成 SQL...",
+        "querying_db": "正在查询数据库...",
+        "analysis_stopped_check": "分析已停止",
+        "query_failed": "查询失败",
+        "column": "列名",
+        "type": "类型",
+        "nullable": "可空",
+        "key": "键",
+        "default": "默认值",
+        "latest": "最新",
+        "chart_types": ["柱状图", "折线图", "面积图", "散点图", "饼图", "箱线图", "直方图"],
+        "chat_response": (
+            "我是一个数据分析助手 — 将你的问题转换为 SQL 并查询数据库。\n\n"
+            "你可以尝试以下问题：\n\n"
+            "• *上个月的总 GMV 是多少？*\n"
+            "• *显示订单最多的前 10 个客户*\n"
+            "• *各渠道的平均订单价值*\n"
+            "• *2025 年月度 GMV 趋势*\n\n"
+            "向我提出任何关于数据的问题。"
+        ),
+    },
+}
+
+
+def t(key: str) -> str:
+    """Return translated string for the current language."""
+    lang = st.session_state.get("lang", "en")
+    return LANG.get(lang, LANG["en"]).get(key, key)
+
+
+def t_list(key: str) -> list:
+    """Return translated list for the current language."""
+    lang = st.session_state.get("lang", "en")
+    return LANG.get(lang, LANG["en"]).get(key, [key])
+
+
 CUSTOM_CSS = """
 <style>
 /* ═══════════════════════════════════════════════════════════════════
@@ -205,6 +353,13 @@ h3 {
 [data-testid="stStatusWidget"] {
     display: none !important;
 }
+/* ── Hide toolbar (Print, etc.) and deploy button ──────────────── */
+[data-testid="stToolbar"] {
+    display: none !important;
+}
+[data-testid="stDeployButton"] {
+    display: none !important;
+}
 
 /* ── Chat message container — no avatars, transparent ──────────── */
 [data-testid="stChatMessage"] {
@@ -289,56 +444,56 @@ def _render_user(text: str) -> None:
 def _render_result(df, sql: str, key_suffix: str, insight: str = "") -> None:
     """Render query result display (insight, SQL, dataframe, chart) without re-executing."""
     if insight:
-        st.subheader("Summary")
+        st.subheader(t("summary"))
         st.markdown(insight)
         st.divider()
 
-    with st.expander("SQL"):
+    with st.expander(t("sql")):
         st.code(sql, language="sql")
 
     if df.empty:
-        st.info("Query returned no results")
+        st.info(t("no_results"))
         return
 
-    st.subheader("Results")
-    st.caption(f"{len(df)} rows returned")
+    st.subheader(t("results"))
+    st.caption(t("rows_returned").format(len(df)))
     st.dataframe(df, use_container_width=True)
 
     numeric_cols = df.select_dtypes(include="number").columns.tolist()
     if numeric_cols:
-        with st.expander("Chart"):
+        with st.expander(t("chart")):
             import plotly.express as px
 
             chart_type = st.selectbox(
-                "Chart type",
-                ["bar", "line", "area", "scatter", "pie", "box", "histogram"],
+                t("chart_type"),
+                t_list("chart_types"),
                 key=f"chart_type_{key_suffix}",
             )
             chart_col = st.selectbox(
-                "Select numeric column",
+                t("select_numeric"),
                 numeric_cols,
                 key=f"chart_{key_suffix}",
             )
             dim_col = st.selectbox(
-                "Select dimension column (optional)",
-                ["(none)"] + [c for c in df.columns if c != chart_col],
+                t("select_dimension"),
+                [t("none")] + [c for c in df.columns if c != chart_col],
                 key=f"dim_{key_suffix}",
             )
 
             col1, col2 = st.columns(2)
             with col1:
                 chart_title = st.text_input(
-                    "Chart title", "",
+                    t("chart_title"), "",
                     key=f"chart_title_{key_suffix}",
-                    placeholder="Optional title",
+                    placeholder=t("optional_title"),
                 )
             with col2:
                 chart_color = st.color_picker(
-                    "Color", "#1f77b4",
+                    t("color"), "#1f77b4",
                     key=f"chart_color_{key_suffix}",
                 )
 
-            x_col = dim_col if dim_col != "(none)" else None
+            x_col = dim_col if dim_col != t("none") else None
 
             try:
                 if chart_type == "bar":
@@ -364,7 +519,7 @@ def _render_result(df, sql: str, key_suffix: str, insight: str = "") -> None:
                     )
                 elif chart_type == "pie":
                     if x_col is None:
-                        st.caption("Select a dimension column for pie charts")
+                        st.caption(t("pie_needs_dimension"))
                         fig = None
                     else:
                         fig = px.pie(
@@ -392,12 +547,12 @@ def _render_result(df, sql: str, key_suffix: str, insight: str = "") -> None:
                     )
                     st.plotly_chart(fig, use_container_width=True)
             except Exception:
-                st.warning("Chart rendering failed — try different columns")
+                st.warning(t("chart_failed"))
 
 def _stop_requested() -> bool:
     """Check if user clicked stop, and show a message if so."""
     if st.session_state.get("stop_requested"):
-        st.info("Analysis stopped")
+        st.info(t("analysis_stopped_check"))
         return True
     return False
 
@@ -407,7 +562,7 @@ def _gen_insight(llm: LLMService, question: str, sql: str, df) -> str:
     if df.empty:
         return ""
     preview = df.head(20).to_markdown(index=False)
-    with st.spinner("AI is analyzing results..."):
+    with st.spinner(t("analyzing_results")):
         return llm.generate_insight(question, sql, preview)
 
 
@@ -429,7 +584,7 @@ def _execute_question(
 
         cached_result = cache.get(q, schema_version)
         if cached_result is not None:
-            st.caption("Returned from cache")
+            st.caption(t("returned_from_cache"))
             sql, df, insight = cached_result
         elif use_metric_sql:
             sql = use_metric_sql
@@ -437,14 +592,14 @@ def _execute_question(
             if not valid:
                 st.error(err_msg)
                 return
-            with st.spinner("Running metric query..."):
+            with st.spinner(t("running_metric")):
                 df = db.execute_query(sql)
             if _stop_requested():
                 return
             insight = _gen_insight(llm, q, sql, df)
             cache.set(q, schema_version, (sql, df, insight))
         else:
-            with st.spinner("AI is generating SQL..."):
+            with st.spinner(t("generating_sql")):
                 sql = llm.generate_sql(q, schema)
 
             if _stop_requested():
@@ -456,7 +611,7 @@ def _execute_question(
                 db.save_query(q, error=err_msg)
                 return
 
-            with st.spinner("Querying database..."):
+            with st.spinner(t("querying_db")):
                 df = db.execute_query(sql)
             if _stop_requested():
                 return
@@ -487,45 +642,49 @@ def _execute_question(
             "insight": "",
             "question": q,
             "from_cache": False,
-            "chat_response": (
-                "I'm a data analysis assistant — I turn your questions "
-                "into SQL and run them against the database.\n\n"
-                "Try something like:\n\n"
-                "• *What was the total GMV last month?*\n"
-                "• *Show me top 10 customers by orders*\n"
-                "• *Average order value by channel*\n"
-                "• *Monthly GMV trend for 2025*\n\n"
-                "Ask me anything about your data."
-            ),
+            "chat_response": t("chat_response"),
         }
         db.save_query(q, error="non-data question")
     except Exception as e:
-        st.error(f"Query failed: {e}")
+        st.error(f"{t('query_failed')}: {e}")
         db.save_query(q, error=str(e))
         logger.exception("Query pipeline failed")
 
 
 def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
     with st.sidebar:
-        st.header("Status")
-
-        if db.test_connection():
-            st.success("Connected")
+        # Language toggle
+        lang = st.selectbox(
+            t("language"),
+            ["English", "中文"],
+            index=0 if st.session_state.get("lang", "en") == "en" else 1,
+            key="lang_selector",
+            label_visibility="collapsed",
+        )
+        if lang == "中文":
+            st.session_state.lang = "zh"
         else:
-            st.error("Disconnected")
-
-        st.caption(db.config.display_name)
+            st.session_state.lang = "en"
 
         st.divider()
 
-        st.subheader("Overview")
+        st.header(t("status"))
+
+        if db.test_connection():
+            st.success(t("connected"))
+        else:
+            st.error(t("disconnected"))
+
+        st.divider()
+
+        st.subheader(t("overview"))
         try:
             tables = db.get_tables()
-            st.metric("Tables", len(tables))
+            st.metric(t("tables"), len(tables))
             search = st.text_input(
-                "Search tables",
+                t("search_label"),
                 key="table_search",
-                placeholder="Search...",
+                placeholder=t("search_placeholder"),
                 label_visibility="collapsed",
             )
 
@@ -539,19 +698,19 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
                     for t in filtered:
                         hint = f"{t['TABLE_NAME']}"
                         if t.get("TABLE_ROWS") is not None:
-                            hint += f"  ·  {t['TABLE_ROWS']:,} rows"
+                            hint += f"  ·  {t['TABLE_ROWS']:,} {t('rows')}"
                         if st.button(hint, key=f"ac_{t['TABLE_NAME']}", use_container_width=True):
                             st.session_state.sidebar_selected_table = t["TABLE_NAME"]
                             st.session_state.table_search = ""
                             st.rerun()
                 else:
-                    st.caption("No tables match")
+                    st.caption(t("no_tables_match"))
             else:
                 for t in tables:
                     tbl_name = t["TABLE_NAME"]
                     label = f"{tbl_name}"
                     if t.get("TABLE_ROWS") is not None:
-                        label += f"  ({t['TABLE_ROWS']:,} rows)"
+                        label += f"  ({t['TABLE_ROWS']:,} {t('rows')})"
                     if st.button(label, key=f"tbl_{tbl_name}", use_container_width=True):
                         if st.session_state.get("sidebar_selected_table") == tbl_name:
                             st.session_state.sidebar_selected_table = None
@@ -568,39 +727,39 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
                 )
                 owner = db.get_database_name()
                 table_rows = table_info.get("TABLE_ROWS")
-                rows_display = f"{table_rows:,} rows" if table_rows else None
+                rows_display = f"{table_rows:,} {t('rows')}" if table_rows else None
                 if rows_display:
                     st.caption(f"{owner}  ·  {rows_display}")
                 else:
                     st.caption(owner)
                 latest = db.get_latest_partition(selected)
                 if latest:
-                    st.caption(f"Latest: {latest}")
+                    st.caption(f"{t('latest')}: {latest}")
 
                 columns = db.get_columns(selected)
                 if columns:
                     col_data = [
                         {
-                            "Column": c["COLUMN_NAME"],
-                            "Type": c["DATA_TYPE"],
-                            "Nullable": c["IS_NULLABLE"],
-                            "Key": c.get("COLUMN_KEY") or "",
-                            "Default": str(c.get("COLUMN_DEFAULT") or ""),
+                            t("column"): c["COLUMN_NAME"],
+                            t("type"): c["DATA_TYPE"],
+                            t("nullable"): c["IS_NULLABLE"],
+                            t("key"): c.get("COLUMN_KEY") or "",
+                            t("default"): str(c.get("COLUMN_DEFAULT") or ""),
                         }
                         for c in columns
                     ]
                     st.dataframe(col_data, use_container_width=True, hide_index=True)
 
-                if st.button("Close", key="close_tbl", use_container_width=True):
+                if st.button(t("close"), key="close_tbl", use_container_width=True):
                     st.session_state.sidebar_selected_table = None
                     st.rerun()
         except Exception as e:
-            st.warning("Unable to load table info")
+            st.warning(t("unable_load_table"))
             st.caption(str(e))
 
         st.divider()
 
-        with st.expander("Metrics"):
+        with st.expander(t("metrics")):
             for m in get_metric_list():
                 label = f"{m['name']} — {m['description']}"
                 if st.button(label, key=f"metric_{m['name']}", use_container_width=True):
@@ -610,16 +769,16 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
 
         st.divider()
 
-        with st.expander("Query History"):
+        with st.expander(t("query_history")):
             try:
                 recent = db.get_recent_queries(10)
                 if recent:
-                    if st.button("Clear All", key="clear_all_history", use_container_width=True):
+                    if st.button(t("clear_all"), key="clear_all_history", use_container_width=True):
                         db.clear_query_history()
                         st.rerun()
                 for row in recent:
                     label = row["question"][:60] + ("..." if len(row["question"]) > 60 else "")
-                    status = "ERR" if row["error"] else f"{row['result_rows'] or 0}r"
+                    status = t("err") if row["error"] else f"{row['result_rows'] or 0}r"
                     col1, col2 = st.columns([9, 1])
                     with col1:
                         if st.button(
@@ -634,19 +793,19 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
                         if st.button(
                             "✕",
                             key=f"del_{row['id']}",
-                            help="Delete this entry",
+                            help=t("delete_entry"),
                             type="tertiary",
                             use_container_width=True,
                         ):
                             db.delete_query(row["id"])
                             st.rerun()
             except Exception:
-                st.caption("History unavailable")
+                st.caption(t("history_unavailable"))
 
 
 def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None:
-    st.title("Data Analysis")
-    st.caption("Ask in natural language — AI generates SQL, queries the database, and visualizes results")
+    st.title(t("title"))
+    st.caption(t("caption"))
 
     # ── Extract pending question (from chat input or sidebar metric/history click) ──
     question = None
@@ -670,7 +829,7 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         with st.container(key="stop_bar"):
             _, stop_col, _ = st.columns([4, 2, 4])
             with stop_col:
-                if st.button("Stop", key="stop_btn", type="tertiary", use_container_width=True):
+                if st.button(t("stop"), key="stop_btn", type="tertiary", use_container_width=True):
                     st.session_state.stop_requested = True
                     st.session_state.analysis_running = False
                     st.session_state.stopped_question = (
@@ -700,7 +859,7 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
                 st.markdown(result["chat_response"])
             else:
                 if result.get("from_cache"):
-                    st.caption("Returned from cache")
+                    st.caption(t("returned_from_cache"))
                 _render_result(
                     result["df"], result["sql"],
                     hashlib.sha256(result["question"].encode()).hexdigest()[:12],
@@ -709,13 +868,13 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
 
     elif st.session_state.get("stopped_question"):
         _render_user(st.session_state.stopped_question)
-        st.info("Analysis stopped — you can edit your question below and try again.")
+        st.info(t("analysis_stopped"))
 
     # ── Native chat input — always fixed at the viewport bottom by Streamlit ──
     # Disabled while analysis runs so the user can't queue a second question.
     is_running = bool(st.session_state.get("analysis_running"))
     prompt = st.chat_input(
-        "AI is analyzing..." if is_running else "Ask a data question...",
+        t("analyzing") if is_running else t("ask_question"),
         disabled=is_running,
     )
     if prompt and not is_running:
@@ -731,7 +890,7 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
 
 def main() -> None:
     st.set_page_config(
-        page_title="Data Analysis",
+        page_title="Data Analysis",  # static — Streamlit needs this before session state
         page_icon="",
         layout="wide",
     )
@@ -745,7 +904,7 @@ def main() -> None:
     try:
         db.init_schema()
     except Exception as e:
-        st.warning("Database initialization failed — check connection config")
+        st.warning(t("db_init_failed"))
         st.code(str(e))
 
     render_sidebar(db, cache)
