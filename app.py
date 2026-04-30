@@ -135,8 +135,8 @@ h3 {
     padding: 0 !important;
 }
 
-/* Fix chat bar (horizontal block after #chat-bar-anchor) to viewport bottom */
-[data-testid="stMarkdownContainer"]:has(#chat-bar-anchor) + [data-testid="stHorizontalBlock"] {
+/* Chat bar — styled via JS-added class */
+.chat-bar-fixed {
     position: fixed !important;
     bottom: 0 !important;
     left: 0 !important;
@@ -147,7 +147,7 @@ h3 {
     border-top: 1px solid var(--secondary-background-color) !important;
 }
 
-/* Prevent messages from being hidden behind fixed chat bar */
+/* Push content above fixed chat bar */
 [data-testid="stAppViewContainer"] > section {
     padding-bottom: 70px !important;
 }
@@ -511,8 +511,29 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         st.info("Analysis stopped — you can edit your question below and try again.")
 
     # ── Fixed chat bar at bottom ──
-    st.markdown('<div id="chat-bar-anchor" style="display:none;"></div>', unsafe_allow_html=True)
     cols = st.columns([25, 1])
+
+
+
+    # JS to fix the chat bar (last horizontal block in main content) to viewport bottom
+    st.components.v1.html("""
+    <script>
+    setTimeout(function() {
+        var doc = window.parent.document;
+        // Only target horizontal blocks inside main content area, skip sidebar
+        var main = doc.querySelector('[data-testid="stMain"]');
+        if (!main) return;
+        var blocks = main.querySelectorAll('[data-testid="stHorizontalBlock"]');
+        for (var i = 0; i < blocks.length; i++) {
+            blocks[i].classList.remove('chat-bar-fixed');
+        }
+        var chat = blocks[blocks.length - 1];
+        if (chat) {
+            chat.classList.add('chat-bar-fixed');
+        }
+    }, 80);
+    </script>
+    """, height=0)
 
     if st.session_state.get("analysis_running"):
         with cols[0]:
