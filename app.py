@@ -495,24 +495,21 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         # User bubble
         _render_user(question)
 
-        # Stop button — rendered BEFORE _execute_question so it's in the DOM during analysis.
-        # Clicking it queues a rerun; _stop_requested() checks the flag between pipeline steps.
-        _, stop_col, _ = st.columns([4, 2, 4])
-        with stop_col:
-            if st.button("■ Stop", key="stop_btn", use_container_width=True):
+        # Execute analysis — stop button rendered inside assistant bubble
+        with st.chat_message("assistant", avatar=None):
+            # Stop button inside assistant bubble so it's visually part of the response.
+            # Placed before _execute_question() so it's in the DOM during analysis.
+            if st.button("■ Stop analysis", key="stop_btn", use_container_width=True):
                 st.session_state.stop_requested = True
                 st.session_state.analysis_running = False
-                st.session_state.stopped_question = question  # preserve question for display
+                st.session_state.stopped_question = question
+                st.session_state.pop("last_result", None)  # prevent stale result from overriding stop
                 st.rerun()
 
-        # Execute analysis
-        with st.chat_message("assistant", avatar=None):
             _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
 
-        # Analysis complete — clean up state and rerun to show results without the stop button
+        # Analysis finished normally — save result and rerun without the stop button
         st.session_state.analysis_running = False
-        if st.session_state.get("stop_requested"):
-            st.session_state.stopped_question = question
         st.rerun()
 
     elif "last_result" in st.session_state:
@@ -544,6 +541,8 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         st.session_state.pending_metric_sql = None
         st.session_state.analysis_running = True
         st.session_state.stop_requested = False
+        st.session_state.pop("stopped_question", None)  # clear stale stop state
+        st.session_state.pop("last_result", None)
         st.rerun()
 
 
