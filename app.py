@@ -71,10 +71,20 @@ textarea {
     box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
     transition: box-shadow 0.15s ease, border-color 0.15s ease !important;
 }
+/* Chat input: keep Streamlit's native single-border container,
+   remove duplicate border from inner textarea */
+[data-testid="stChatInput"] textarea {
+    border: none !important;
+    box-shadow: none !important;
+}
 input:focus-visible, textarea:focus-visible {
     box-shadow: 0 0 0 3px rgba(0,122,255,0.15) !important;
     border-color: rgba(0,122,255,0.3) !important;
     outline: none !important;
+}
+[data-testid="stChatInput"] textarea:focus-visible {
+    box-shadow: none !important;
+    border-color: transparent !important;
 }
 
 /* ── Buttons — pill-shaped, soft ───────────────────────────────── */
@@ -99,6 +109,11 @@ button[kind]:active {
     box-shadow: none !important;
     border-radius: 12px !important;
     background: rgba(0,0,0,0.04) !important;
+}
+[data-testid="stSidebar"] [data-testid="stTextInput"] > div {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
 }
 [data-testid="stSidebar"] button[kind] {
     padding: 6px 10px !important;
@@ -253,14 +268,14 @@ def _cached_schema_context(db_hash: str) -> str:
 
 
 def _render_user(text: str) -> None:
-    """Render user message — right-aligned gray bubble."""
+    """Render user message — iMessage-style blue bubble, right-aligned."""
     escaped = html.escape(text)
     st.markdown(
         f'<div style="display:flex;justify-content:flex-end;margin:8px 0;">'
-        f'<div style="background:#e8e8ed;border-radius:18px;'
+        f'<div style="background:#007AFF;color:#fff;border-radius:16px;'
         f'padding:10px 16px;max-width:75%;width:fit-content;text-align:left;'
         f'font-size:15px;font-weight:450;line-height:1.4;'
-        f'box-shadow:0 1px 2px rgba(0,0,0,0.04);">'
+        f'box-shadow:0 1px 3px rgba(0,122,255,0.2);">'
         f'{escaped}</div></div>',
         unsafe_allow_html=True,
     )
