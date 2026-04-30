@@ -1,6 +1,8 @@
+import hashlib
 import logging
 import os
 import re
+import time
 
 from dashscope import Generation
 from dotenv import load_dotenv
@@ -8,6 +10,33 @@ from dotenv import load_dotenv
 load_dotenv()
 
 logger = logging.getLogger(__name__)
+
+
+def _retry_with_backoff(max_retries=3, base_delay=1.0):
+    """Decorator: retry on transient failure with exponential backoff.
+
+    Does NOT retry ValueError (semantic errors like CANNOT_CONVERT).
+    """
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            last_exc = None
+            for attempt in range(max_retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except ValueError:
+                    raise
+                except Exception as e:
+                    last_exc = e
+                    if attempt < max_retries:
+                        delay = base_delay * (2 ** attempt)
+                        logger.warning(
+                            "LLM call failed (attempt %d/%d), retrying in %.1fs: %s",
+                            attempt + 1, max_retries + 1, delay, e,
+                        )
+                        time.sleep(delay)
+            raise last_exc
+        return wrapper
+    return decorator
 
 SYSTEM_PROMPT = """You are a professional MySQL SQL query expert. Generate correct MySQL SELECT queries based on the provided database schema and natural language questions.
 
@@ -26,9 +55,23 @@ SYSTEM_PROMPT = """You are a professional MySQL SQL query expert. Generate corre
 class LLMService:
     def __init__(self, model: str | None = None):
         self.model = model or os.environ.get("DASHSCOPE_MODEL", "deepseek-v4-pro")
+        self._sql_cache: dict[str, str] = {}
+        self._sql_cache_hits = 0
 
+    def _sql_cache_key(self, question: str, schema_context: str) -> str:
+        return hashlib.sha256(
+            f"{question}||{hashlib.sha256(schema_context.encode()).hexdigest()}".encode()
+        ).hexdigest()
+
+    @_retry_with_backoff(max_retries=3, base_delay=1.0)
     def generate_sql(self, question: str, schema_context: str) -> str:
         """Convert natural language question to SQL."""
+        cache_key = self._sql_cache_key(question, schema_context)
+        if cache_key in self._sql_cache:
+            self._sql_cache_hits += 1
+            logger.info("LLM SQL cache hit (total: %d)", self._sql_cache_hits)
+            return self._sql_cache[cache_key]
+
         user_message = f"""## Database Schema
 
 {schema_context}
@@ -66,6 +109,11 @@ Generate SQL query:"""
             if sql == "-- CANNOT_CONVERT":
                 raise ValueError("Unable to convert this question to SQL. Please try a more specific query.")
 
+            # Store in local cache
+            self._sql_cache[cache_key] = sql
+            if len(self._sql_cache) > 500:
+                self._sql_cache.pop(next(iter(self._sql_cache)))
+
             return sql
 
         except ValueError:
@@ -74,6 +122,7 @@ Generate SQL query:"""
             logger.exception("LLM generation failed")
             raise RuntimeError(f"SQL generation failed: {e}") from e
 
+    @_retry_with_backoff(max_retries=3, base_delay=1.0)
     def generate_insight(self, question: str, sql: str, df_markdown: str) -> str:
         """Generate a plain-English summary of query results."""
         user_message = f"""## User Question

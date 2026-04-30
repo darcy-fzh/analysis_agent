@@ -1,6 +1,7 @@
 import logging
 import os
 import random
+import re
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -369,7 +370,6 @@ class DatabaseManager:
         if not upper.startswith("SELECT"):
             return False, "Only SELECT queries are allowed"
         for kw in DANGEROUS_KEYWORDS:
-            import re
             if re.search(rf"\b{kw}\b", upper):
                 return False, f"SQL contains forbidden keyword: {kw}"
         return True, ""

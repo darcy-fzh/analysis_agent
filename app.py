@@ -1,5 +1,7 @@
+import hashlib
 import html
 import logging
+import os
 import sys
 
 import streamlit as st
@@ -199,6 +201,16 @@ def get_cache() -> QueryCache:
     return QueryCache(ttl=300)
 
 
+@st.cache_data(ttl=300, show_spinner=False)
+def _cached_schema_context(db_hash: str) -> str:
+    """Cache schema context to avoid repeated DB queries.
+
+    db_hash ensures invalidation when the database changes.
+    """
+    db = get_db()
+    return db.get_schema_context()
+
+
 def _render_user(text: str) -> None:
     """Render user message — right-aligned gray bubble, fit to text."""
     escaped = html.escape(text)
@@ -298,8 +310,12 @@ def _execute_question(
 ) -> None:
     """Run a single question through the pipeline and render the result."""
     try:
-        schema = db.get_schema_context()
-        schema_version = str(hash(schema))
+        db_hash = hashlib.sha256(
+            f"{os.environ.get('DB_TYPE','mysql')}:{os.environ.get('DB_HOST','')}:"
+            f"{os.environ.get('DB_NAME','')}".encode()
+        ).hexdigest()[:12]
+        schema = _cached_schema_context(db_hash)
+        schema_version = hashlib.sha256(schema.encode()).hexdigest()
 
         cached_result = cache.get(q, schema_version)
         if cached_result is not None:
@@ -337,7 +353,7 @@ def _execute_question(
             insight = _gen_insight(llm, q, sql, df)
             cache.set(q, schema_version, (sql, df, insight))
 
-        _render_result(df, sql, str(hash(q)), insight=insight)
+        _render_result(df, sql, hashlib.sha256(q.encode()).hexdigest()[:12], insight=insight)
 
         if df.empty:
             db.save_query(q, sql=sql, row_count=0)
@@ -556,7 +572,7 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
                 st.caption("Returned from cache")
             _render_result(
                 result["df"], result["sql"],
-                str(hash(result["question"])),
+                hashlib.sha256(result["question"].encode()).hexdigest()[:12],
                 insight=result.get("insight", ""),
             )
 
