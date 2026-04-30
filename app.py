@@ -82,6 +82,18 @@ input:focus-visible, textarea:focus-visible {
     min-width: unset !important;
 }
 
+/* Query history delete button — fixed narrow width, never wraps */
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) > div:first-child {
+    flex: 0 0 28px !important;
+    min-width: 28px !important;
+    max-width: 28px !important;
+}
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) > div:last-child {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+}
+
 /* Sidebar — subtle bg, adapts to theme */
 [data-testid="stSidebar"] {
     background-color: var(--secondary-background-color);
@@ -437,17 +449,8 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
                 for row in recent:
                     label = row["question"][:60] + ("..." if len(row["question"]) > 60 else "")
                     status = "ERR" if row["error"] else f"{row['result_rows'] or 0}r"
-                    col1, col2 = st.columns([10, 1])
+                    col1, col2 = st.columns([1, 9])
                     with col1:
-                        if st.button(
-                            f"[{status}] {label}",
-                            key=f"hist_{row['id']}",
-                            use_container_width=True,
-                        ):
-                            st.session_state.pending_question = row["question"]
-                            st.session_state.pending_metric_sql = None
-                            st.rerun()
-                    with col2:
                         if st.button(
                             "✕",
                             key=f"del_{row['id']}",
@@ -455,6 +458,15 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
                             use_container_width=True,
                         ):
                             db.delete_query(row["id"])
+                            st.rerun()
+                    with col2:
+                        if st.button(
+                            f"[{status}] {label}",
+                            key=f"hist_{row['id']}",
+                            use_container_width=True,
+                        ):
+                            st.session_state.pending_question = row["question"]
+                            st.session_state.pending_metric_sql = None
                             st.rerun()
             except Exception:
                 st.caption("History unavailable")
@@ -478,11 +490,21 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     # ── Render chat messages ──
     if question:
         _render_user(question)
+
+        # Stop button rendered BEFORE execution so it's visible during analysis
+        _, stop_col, _ = st.columns([3, 2, 3])
+        with stop_col:
+            if st.button("■ Stop", key="stop_btn", use_container_width=True):
+                st.session_state.stop_requested = True
+                st.rerun()
+
         with st.chat_message("assistant", avatar=None):
             _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
+
         st.session_state.analysis_running = False
         if st.session_state.get("stop_requested"):
             st.session_state.stopped_question = question
+        st.rerun()  # rerun to hide stop button now that analysis is done
     elif "last_result" in st.session_state:
         result = st.session_state.last_result
         _render_user(result["question"])
@@ -493,14 +515,6 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     elif st.session_state.get("stopped_question"):
         _render_user(st.session_state.stopped_question)
         st.info("Analysis stopped — you can edit your question below and try again.")
-
-    # ── Stop button (only while analysis is running) ──
-    if st.session_state.get("analysis_running"):
-        col_l, col_mid, col_r = st.columns([3, 2, 3])
-        with col_mid:
-            if st.button("■ Stop", key="stop_btn", use_container_width=True):
-                st.session_state.stop_requested = True
-                st.rerun()
 
     # ── Native chat input — always fixed at the bottom, never disappears ──
     is_running = bool(st.session_state.get("analysis_running"))
