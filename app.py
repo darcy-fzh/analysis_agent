@@ -148,10 +148,10 @@ section[data-testid="stChatMessage"] {
     box-shadow: none !important;
 }
 
-/* User message bubble — same gray border + background as chat input */
+/* User message bubble — same gray background as chat input */
 .user-bubble {
     background-color: var(--secondary-background-color) !important;
-    border: 1px solid #d1d5db !important;
+    border: none !important;
     border-radius: 8px !important;
     padding: 0.5rem 0.9rem !important;
 }
