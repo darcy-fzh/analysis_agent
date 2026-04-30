@@ -689,28 +689,28 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
             )
 
             filtered = [
-                t for t in tables
-                if not search or search.lower() in t["TABLE_NAME"].lower()
+                tbl for tbl in tables
+                if not search or search.lower() in tbl["TABLE_NAME"].lower()
             ]
 
             if search:
                 if filtered:
-                    for t in filtered:
-                        hint = f"{t['TABLE_NAME']}"
-                        if t.get("TABLE_ROWS") is not None:
-                            hint += f"  ·  {t['TABLE_ROWS']:,} {t('rows')}"
-                        if st.button(hint, key=f"ac_{t['TABLE_NAME']}", use_container_width=True):
-                            st.session_state.sidebar_selected_table = t["TABLE_NAME"]
+                    for tbl in filtered:
+                        hint = f"{tbl['TABLE_NAME']}"
+                        if tbl.get("TABLE_ROWS") is not None:
+                            hint += f"  ·  {tbl['TABLE_ROWS']:,} {t('rows')}"
+                        if st.button(hint, key=f"ac_{tbl['TABLE_NAME']}", use_container_width=True):
+                            st.session_state.sidebar_selected_table = tbl["TABLE_NAME"]
                             st.session_state.table_search = ""
                             st.rerun()
                 else:
                     st.caption(t("no_tables_match"))
             else:
-                for t in tables:
-                    tbl_name = t["TABLE_NAME"]
+                for tbl in tables:
+                    tbl_name = tbl["TABLE_NAME"]
                     label = f"{tbl_name}"
-                    if t.get("TABLE_ROWS") is not None:
-                        label += f"  ({t['TABLE_ROWS']:,} {t('rows')})"
+                    if tbl.get("TABLE_ROWS") is not None:
+                        label += f"  ({tbl['TABLE_ROWS']:,} {t('rows')})"
                     if st.button(label, key=f"tbl_{tbl_name}", use_container_width=True):
                         if st.session_state.get("sidebar_selected_table") == tbl_name:
                             st.session_state.sidebar_selected_table = None
@@ -723,7 +723,7 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
                 st.divider()
                 st.subheader(f"{selected}")
                 table_info = next(
-                    (t for t in tables if t["TABLE_NAME"] == selected), {}
+                    (tbl for tbl in tables if tbl["TABLE_NAME"] == selected), {}
                 )
                 owner = db.get_database_name()
                 table_rows = table_info.get("TABLE_ROWS")
