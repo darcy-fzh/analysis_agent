@@ -94,6 +94,12 @@ button[kind]:active {
     -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
     border-right: 1px solid rgba(0,0,0,0.06) !important;
 }
+[data-testid="stSidebar"] [data-testid="stTextInput"] input {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 12px !important;
+    background: rgba(0,0,0,0.04) !important;
+}
 [data-testid="stSidebar"] button[kind] {
     padding: 6px 10px !important;
     border-radius: 10px !important;
@@ -247,14 +253,14 @@ def _cached_schema_context(db_hash: str) -> str:
 
 
 def _render_user(text: str) -> None:
-    """Render user message — iMessage-style blue bubble, right-aligned."""
+    """Render user message — right-aligned gray bubble."""
     escaped = html.escape(text)
     st.markdown(
         f'<div style="display:flex;justify-content:flex-end;margin:8px 0;">'
-        f'<div style="background:#007AFF;color:#fff;border-radius:18px;'
+        f'<div style="background:#e8e8ed;border-radius:18px;'
         f'padding:10px 16px;max-width:75%;width:fit-content;text-align:left;'
         f'font-size:15px;font-weight:450;line-height:1.4;'
-        f'box-shadow:0 1px 3px rgba(0,122,255,0.2);">'
+        f'box-shadow:0 1px 2px rgba(0,0,0,0.04);">'
         f'{escaped}</div></div>',
         unsafe_allow_html=True,
     )
