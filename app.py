@@ -148,12 +148,60 @@ h3 {
 }
 
 
-/* Push content above fixed chat input */
+/* Push content above fixed chat bar */
 [data-testid="stMain"] .stMainBlockContainer {
-    padding-bottom: 90px !important;
+    padding-bottom: 80px !important;
+}
+
+/* Chat bar send / stop button — square, compact */
+[data-testid="stMain"] [data-testid="stHorizontalBlock"] [data-testid="stBaseButton-secondary"] {
+    min-width: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    font-size: 16px !important;
 }
 
 </style>
+"""
+
+
+# JS: fix the chat bar (stHorizontalBlock containing a stTextInput) to viewport bottom.
+# Uses MutationObserver so it re-applies after every Streamlit rerun without setTimeout races.
+CHAT_BAR_JS = """
+<script>
+(function() {
+    var doc = window.parent.document;
+    if (window.parent._chatBarObserver) {
+        window.parent._chatBarObserver.disconnect();
+    }
+    function fix() {
+        var main = doc.querySelector('[data-testid="stMain"]');
+        if (!main) return;
+        var blocks = main.querySelectorAll('[data-testid="stHorizontalBlock"]');
+        for (var i = blocks.length - 1; i >= 0; i--) {
+            if (blocks[i].querySelector('[data-testid="stTextInput"]')) {
+                var bar = blocks[i];
+                bar.style.setProperty('position',   'fixed',                           'important');
+                bar.style.setProperty('bottom',     '0',                               'important');
+                bar.style.setProperty('left',       '0',                               'important');
+                bar.style.setProperty('right',      '0',                               'important');
+                bar.style.setProperty('z-index',    '999',                             'important');
+                bar.style.setProperty('padding',    '10px 16px 12px',                  'important');
+                bar.style.setProperty('margin',     '0',                               'important');
+                bar.style.setProperty('border-top', '1px solid rgba(128,128,128,0.15)','important');
+                bar.style.setProperty('background-color', 'var(--background-color)',   'important');
+                bar.style.setProperty('box-sizing', 'border-box',                      'important');
+                return;
+            }
+        }
+    }
+    fix();
+    window.parent._chatBarObserver = new MutationObserver(fix);
+    window.parent._chatBarObserver.observe(doc.body, { childList: true, subtree: true });
+})();
+</script>
 """
 
 
@@ -487,24 +535,9 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         st.session_state.analysis_running = True
         st.session_state.stop_requested = False
 
-    # ── Render chat messages ──
+    # ── Display conversation ──
     if question:
         _render_user(question)
-
-        # Stop button rendered BEFORE execution so it's visible during analysis
-        _, stop_col, _ = st.columns([3, 2, 3])
-        with stop_col:
-            if st.button("■ Stop", key="stop_btn", use_container_width=True):
-                st.session_state.stop_requested = True
-                st.rerun()
-
-        with st.chat_message("assistant", avatar=None):
-            _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
-
-        st.session_state.analysis_running = False
-        if st.session_state.get("stop_requested"):
-            st.session_state.stopped_question = question
-        st.rerun()  # rerun to hide stop button now that analysis is done
     elif "last_result" in st.session_state:
         result = st.session_state.last_result
         _render_user(result["question"])
@@ -516,17 +549,56 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         _render_user(st.session_state.stopped_question)
         st.info("Analysis stopped — you can edit your question below and try again.")
 
-    # ── Native chat input — always fixed at the bottom, never disappears ──
+    # ── Chat bar (fixed to viewport bottom via JS) ──
+    # Rendered BEFORE _execute_question so the stop button is visible during analysis.
     is_running = bool(st.session_state.get("analysis_running"))
-    user_input = st.chat_input(
-        "AI is analyzing..." if is_running else "Ask a data question...",
-        disabled=is_running,
-    )
-    if user_input and not is_running:
-        st.session_state.pending_question = user_input.strip()
-        st.session_state.pending_metric_sql = None
-        st.session_state.analysis_running = True
-        st.session_state.stop_requested = False
+
+    if is_running:
+        col_input, col_btn = st.columns([20, 1])
+        with col_input:
+            st.text_input(
+                "chat",
+                placeholder="AI is analyzing...",
+                label_visibility="collapsed",
+                key="chat_disabled_input",
+                disabled=True,
+            )
+        with col_btn:
+            # ■ replaces the send button while analysis runs — same pattern as ChatGPT/Gemini
+            if st.button("■", key="stop_btn", help="Stop analysis"):
+                st.session_state.stop_requested = True
+                st.session_state.analysis_running = False  # immediately re-enable input
+                st.rerun()
+    else:
+        cycle = st.session_state.get("chat_cycle", 0)
+        with st.form(key=f"chat_{cycle}", clear_on_submit=True):
+            col_input, col_btn = st.columns([20, 1])
+            with col_input:
+                user_input = st.text_input(
+                    "chat",
+                    placeholder="Ask a data question...",
+                    label_visibility="collapsed",
+                )
+            with col_btn:
+                submitted = st.form_submit_button("↑")
+            if submitted and (user_input or "").strip():
+                st.session_state.pending_question = user_input.strip()
+                st.session_state.pending_metric_sql = None
+                st.session_state.analysis_running = True
+                st.session_state.stop_requested = False
+                st.session_state.chat_cycle = cycle + 1
+                st.rerun()
+
+    # JS fixes the row above to the viewport bottom via MutationObserver
+    st.components.v1.html(CHAT_BAR_JS, height=0)
+
+    # ── Run analysis after chat bar is rendered (stop button already visible) ──
+    if question:
+        with st.chat_message("assistant", avatar=None):
+            _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
+        st.session_state.analysis_running = False
+        if st.session_state.get("stop_requested"):
+            st.session_state.stopped_question = question
         st.rerun()
 
 
