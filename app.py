@@ -116,6 +116,11 @@ h3 {
     font-weight: 500 !important;
 }
 
+/* Hide Streamlit's built-in running/stop indicator (top-right) */
+[data-testid="stStatusWidget"] {
+    display: none !important;
+}
+
 /* Chat message container — clean, no avatars */
 [data-testid="stChatMessage"] {
     flex-direction: row !important;
