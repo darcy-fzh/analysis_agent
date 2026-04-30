@@ -82,6 +82,10 @@ input:focus-visible, textarea:focus-visible {
     min-width: unset !important;
 }
 
+/* Query history row — vertically center the delete button with the text */
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) {
+    align-items: center !important;
+}
 /* Query history delete button — compact, no padding, small font */
 [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) > div:first-child {
     flex: 0 0 22px !important;
@@ -159,6 +163,15 @@ h3 {
 /* Push content above fixed native chat input */
 [data-testid="stMain"] .stMainBlockContainer {
     padding-bottom: 90px !important;
+}
+
+/* Stop bar — styled like the native chat input */
+[data-testid="stMain"] .stop-bar {
+    background: var(--secondary-background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 6px 0;
+    margin: 6px 0;
 }
 
 </style>
@@ -506,9 +519,10 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     # Rendering it here (conditional on analysis_running) ensures it survives
     # every rerun and its click is always processed.
     if st.session_state.get("analysis_running"):
+        st.markdown('<div class="stop-bar">', unsafe_allow_html=True)
         _, stop_col, _ = st.columns([4, 2, 4])
         with stop_col:
-            if st.button("■ Stop analysis", key="stop_btn", type="tertiary", use_container_width=True):
+            if st.button("■ Stop analysis", key="stop_btn", use_container_width=True):
                 st.session_state.stop_requested = True
                 st.session_state.analysis_running = False
                 st.session_state.stopped_question = (
@@ -516,6 +530,7 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
                 )
                 st.session_state.pop("last_result", None)
                 st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # ── Render conversation ──
     if question:
