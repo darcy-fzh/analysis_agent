@@ -22,87 +22,113 @@ logger = logging.getLogger(__name__)
 
 CUSTOM_CSS = """
 <style>
+/* ═══════════════════════════════════════════════════════════════════
+   Apple-inspired design system — soft shadows, generous radii,
+   SF-style typography, card-based layouts, frosted sidebar.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Global typography ─────────────────────────────────────────── */
 html, body, [class*="css"] {
     font-family:
+        -apple-system, BlinkMacSystemFont,
+        "SF Pro Display", "SF Pro Text",
         system-ui,
-        -apple-system,
-        "Segoe UI",
-        Roboto,
-        Ubuntu,
-        Cantarell,
-        "Noto Sans",
-        sans-serif,
-        BlinkMacSystemFont,
-        "Helvetica Neue",
-        Arial,
-        sans-serif;
-    font-size: 14px;
+        "Segoe UI", Roboto, Ubuntu, Cantarell,
+        "Noto Sans", sans-serif,
+        "Helvetica Neue", Arial;
+    font-size: 15px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* Code blocks — DeepSeek monospace stack */
+/* ── Code blocks ───────────────────────────────────────────────── */
 code, pre, [data-testid="stCodeBlock"] code {
     font-family:
-        Menlo,
-        Monaco,
-        Consolas,
-        "Cascadia Mono",
-        "Ubuntu Mono",
-        "JetBrains Mono",
-        "Fira Code",
-        "Roboto Mono",
-        "Courier New",
-        Courier,
-        monospace;
+        "SF Mono", Menlo, Monaco, Consolas,
+        "Cascadia Mono", "Ubuntu Mono",
+        "JetBrains Mono", "Fira Code",
+        "Roboto Mono", "Courier New", Courier, monospace;
+    font-size: 13px;
 }
 
-/* Rounded inputs — DeepSeek uses 8px/10px */
+/* ── Cards & containers — soft shadow, generous radius ─────────── */
+[data-testid="stExpander"] {
+    border-radius: 14px !important;
+    border: none !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04) !important;
+    margin-bottom: 12px !important;
+}
+[data-testid="stExpander"] > div:first-child {
+    border-radius: 14px !important;
+}
+
+/* ── Inputs & selects — pill-like, soft focus ──────────────────── */
 [data-testid="stTextInput"] input,
 [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
 textarea {
-    border-radius: 8px !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease !important;
 }
-
-/* Buttons */
-button[kind], [data-testid="baseButton-secondary"] {
-    border-radius: 8px !important;
-    font-weight: 500 !important;
-}
-
-/* Focus ring — clean, no red */
 input:focus-visible, textarea:focus-visible {
-    box-shadow: 0 0 0 1px var(--secondary-background-color) !important;
-    border-radius: 8px;
+    box-shadow: 0 0 0 3px rgba(0,122,255,0.15) !important;
+    border-color: rgba(0,122,255,0.3) !important;
+    outline: none !important;
 }
 
-/* Compact sidebar buttons */
+/* ── Buttons — pill-shaped, soft ───────────────────────────────── */
+button[kind], [data-testid="baseButton-secondary"] {
+    border-radius: 12px !important;
+    font-weight: 500 !important;
+    transition: all 0.12s ease !important;
+}
+button[kind]:active {
+    transform: scale(0.98);
+}
+
+/* ── Sidebar — frosted glass feel ──────────────────────────────── */
+[data-testid="stSidebar"] {
+    background: rgba(245,245,247,0.92) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    border-right: 1px solid rgba(0,0,0,0.06) !important;
+}
 [data-testid="stSidebar"] button[kind] {
-    padding: 0.15rem 0.35rem !important;
+    padding: 6px 10px !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+    font-weight: 450 !important;
+    transition: background 0.1s ease !important;
     display: flex !important;
     align-items: center !important;
-    justify-content: center !important;
-    text-align: center !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
     min-width: unset !important;
 }
 
-/* Query history row — vertically center the delete button with the text */
+/* ── Query history row ─────────────────────────────────────────── */
 [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) {
     align-items: center !important;
 }
-/* Query history delete button — compact, no padding, small font */
 [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) > div:last-child {
-    flex: 0 0 22px !important;
-    min-width: 22px !important;
-    max-width: 22px !important;
+    flex: 0 0 24px !important;
+    min-width: 24px !important;
+    max-width: 24px !important;
 }
 [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) > div:last-child button {
     padding: 0 !important;
-    font-size: 11px !important;
+    font-size: 12px !important;
     line-height: 1 !important;
-    min-height: 22px !important;
-    height: 22px !important;
-    width: 22px !important;
+    min-height: 24px !important;
+    height: 24px !important;
+    width: 24px !important;
+    border-radius: 12px !important;
+    opacity: 0.4 !important;
+    transition: opacity 0.15s ease !important;
+}
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) > div:last-child button:hover {
+    opacity: 1 !important;
 }
 [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) > div:first-child {
     flex: 1 1 0 !important;
@@ -110,46 +136,51 @@ input:focus-visible, textarea:focus-visible {
     overflow: hidden !important;
 }
 
-/* Sidebar — subtle bg, adapts to theme */
-[data-testid="stSidebar"] {
-    background-color: var(--secondary-background-color);
-}
-
-/* Dataframe */
+/* ── Dataframe — clean, light rows ─────────────────────────────── */
 [data-testid="stTable"] table, [data-testid="stDataFrame"] table {
     font-size: 13px;
+    border-radius: 12px !important;
+    overflow: hidden !important;
 }
 
-/* Metric cards */
+/* ── Metric cards — clean ──────────────────────────────────────── */
 [data-testid="stMetric"] {
-    background: transparent;
+    background: rgba(0,0,0,0.02) !important;
+    border-radius: 14px !important;
+    padding: 12px 16px !important;
 }
 
-/* Title — adaptive to theme */
+/* ── H1 title — Apple-style large title ────────────────────────── */
 h1 {
-    font-size: 24px !important;
-    font-weight: 600 !important;
-    letter-spacing: -0.02em;
+    font-size: 28px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.022em;
     color: var(--text-color);
+    margin-bottom: 2px !important;
 }
 
-/* Subtitle */
+/* ── Subtitle / caption ────────────────────────────────────────── */
 h1 + div {
-    opacity: 0.6;
+    opacity: 0.5;
+    font-size: 15px !important;
+    font-weight: 400 !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
 }
 
-/* Subheaders must be smaller than title */
+/* ── Subheaders — Apple-style section titles ───────────────────── */
 h3 {
-    font-size: 16px !important;
-    font-weight: 500 !important;
+    font-size: 17px !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.01em;
 }
 
-/* Hide Streamlit's built-in running/stop indicator (top-right) */
+/* ── Hide Streamlit's built-in running/stop indicator ──────────── */
 [data-testid="stStatusWidget"] {
     display: none !important;
 }
 
-/* Chat message container — clean, no avatars */
+/* ── Chat message container — no avatars, transparent ──────────── */
 [data-testid="stChatMessage"] {
     flex-direction: row !important;
 }
@@ -163,20 +194,22 @@ h3 {
     padding: 0 !important;
 }
 
-
-/* Push content above fixed native chat input */
+/* ── Push content above fixed chat input ───────────────────────── */
 [data-testid="stMain"] .stMainBlockContainer {
     padding-bottom: 90px !important;
 }
 
-/* Stop button bar — background box like chat input, no border */
+/* ── Stop bar — floating pill with soft shadow ─────────────────── */
 [data-st-key="stop_bar"],
 [data-testid="stMain"] [data-testid="stHorizontalBlock"]:has([data-testid="baseButton-tertiary"]) {
-    background: #f0f2f6 !important;
+    background: rgba(255,255,255,0.85) !important;
+    backdrop-filter: blur(12px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
     border: none !important;
-    border-radius: 0.5rem !important;
-    padding: 4px 0 !important;
-    margin: 6px 0 !important;
+    border-radius: 16px !important;
+    padding: 6px 0 !important;
+    margin: 8px 0 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(0,0,0,0.06) !important;
 }
 [data-st-key="stop_bar"] [data-testid="stHorizontalBlock"] {
     background: transparent !important;
@@ -214,12 +247,14 @@ def _cached_schema_context(db_hash: str) -> str:
 
 
 def _render_user(text: str) -> None:
-    """Render user message — right-aligned gray bubble, fit to text."""
+    """Render user message — iMessage-style blue bubble, right-aligned."""
     escaped = html.escape(text)
     st.markdown(
-        f'<div style="display:flex;justify-content:flex-end;margin:6px 0;">'
-        f'<div style="background:#f3f4f6;border-radius:14px;padding:8px 14px;'
-        f'max-width:75%;width:fit-content;text-align:left;">'
+        f'<div style="display:flex;justify-content:flex-end;margin:8px 0;">'
+        f'<div style="background:#007AFF;color:#fff;border-radius:18px;'
+        f'padding:10px 16px;max-width:75%;width:fit-content;text-align:left;'
+        f'font-size:15px;font-weight:450;line-height:1.4;'
+        f'box-shadow:0 1px 3px rgba(0,122,255,0.2);">'
         f'{escaped}</div></div>',
         unsafe_allow_html=True,
     )
@@ -427,13 +462,14 @@ def _execute_question(
             "question": q,
             "from_cache": False,
             "chat_response": (
-                "I'm a data analysis assistant. I can help you query the "
-                "database with natural language. Try questions like:\n\n"
-                '- "What was the total GMV last month?"\n'
-                '- "Show me top 10 customers by orders"\n'
-                '- "Average order value by channel"\n'
-                '- "Monthly GMV trend for 2025"\n\n'
-                "I'll generate SQL, run the query, and show you the results!"
+                "I'm a data analysis assistant — I turn your questions "
+                "into SQL and run them against the database.\n\n"
+                "Try something like:\n\n"
+                "• *What was the total GMV last month?*\n"
+                "• *Show me top 10 customers by orders*\n"
+                "• *Average order value by channel*\n"
+                "• *Monthly GMV trend for 2025*\n\n"
+                "Ask me anything about your data."
             ),
         }
         db.save_query(q, error="non-data question")
@@ -445,25 +481,25 @@ def _execute_question(
 
 def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
     with st.sidebar:
-        st.header("System Status")
+        st.header("Status")
 
         if db.test_connection():
-            st.success("Database Connected")
+            st.success("Connected")
         else:
-            st.error("Database Disconnected")
+            st.error("Disconnected")
 
         st.caption(db.config.display_name)
 
         st.divider()
 
-        st.subheader("Data Overview")
+        st.subheader("Overview")
         try:
             tables = db.get_tables()
             st.metric("Tables", len(tables))
             search = st.text_input(
                 "Search tables",
                 key="table_search",
-                placeholder="Type to search...",
+                placeholder="Search...",
                 label_visibility="collapsed",
             )
 
@@ -505,16 +541,15 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
                     (t for t in tables if t["TABLE_NAME"] == selected), {}
                 )
                 owner = db.get_database_name()
-                st.caption(f"**Owner:** {owner}")
-                if table_info.get("TABLE_COMMENT"):
-                    st.caption(f"**Description:** {table_info['TABLE_COMMENT']}")
                 table_rows = table_info.get("TABLE_ROWS")
-                rows_display = f"{table_rows:,}" if table_rows is not None else "?"
-                updated = table_info.get("UPDATE_TIME") or "—"
-                st.caption(f"**Rows:** {rows_display}  |  **Updated:** {updated}")
+                rows_display = f"{table_rows:,} rows" if table_rows else None
+                if rows_display:
+                    st.caption(f"{owner}  ·  {rows_display}")
+                else:
+                    st.caption(owner)
                 latest = db.get_latest_partition(selected)
                 if latest:
-                    st.caption(f"**Latest partition:** {latest}")
+                    st.caption(f"Latest: {latest}")
 
                 columns = db.get_columns(selected)
                 if columns:
@@ -584,8 +619,8 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
 
 
 def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None:
-    st.title("Data Analysis AI Agent")
-    st.caption("Ask questions in natural language — AI generates SQL and queries the database")
+    st.title("Data Analysis")
+    st.caption("Ask in natural language — AI generates SQL, queries the database, and visualizes results")
 
     # ── Extract pending question (from chat input or sidebar metric/history click) ──
     question = None
@@ -609,7 +644,7 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         with st.container(key="stop_bar"):
             _, stop_col, _ = st.columns([4, 2, 4])
             with stop_col:
-                if st.button("■ Stop analysis", key="stop_btn", type="tertiary", use_container_width=True):
+                if st.button("Stop", key="stop_btn", type="tertiary", use_container_width=True):
                     st.session_state.stop_requested = True
                     st.session_state.analysis_running = False
                     st.session_state.stopped_question = (
@@ -670,7 +705,7 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
 
 def main() -> None:
     st.set_page_config(
-        page_title="Data Analysis AI Agent",
+        page_title="Data Analysis",
         page_icon="",
         layout="wide",
     )
