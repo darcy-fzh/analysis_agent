@@ -135,21 +135,10 @@ h3 {
     padding: 0 !important;
 }
 
-/* Chat bar — styled via JS-added class */
-.chat-bar-fixed {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    background: var(--background-color) !important;
-    padding: 10px 20px !important;
-    z-index: 999 !important;
-    border-top: 1px solid var(--secondary-background-color) !important;
-}
 
-/* Push content above fixed chat bar */
-[data-testid="stAppViewContainer"] > section {
-    padding-bottom: 70px !important;
+/* Push content above fixed chat input */
+[data-testid="stMain"] .stMainBlockContainer {
+    padding-bottom: 90px !important;
 }
 
 </style>
@@ -492,12 +481,7 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         with st.chat_message("assistant", avatar=None):
             _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
         st.session_state.analysis_running = False
-        if not st.session_state.get("stop_requested"):
-            # Completed normally — clear input via key cycle
-            st.session_state.chat_input_key = st.session_state.get("chat_input_key", 0) + 1
-            st.session_state.chat_input_text = ""
-        else:
-            # Stopped — keep text for editing
+        if st.session_state.get("stop_requested"):
             st.session_state.stopped_question = question
     elif "last_result" in st.session_state:
         result = st.session_state.last_result
@@ -510,68 +494,26 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         _render_user(st.session_state.stopped_question)
         st.info("Analysis stopped — you can edit your question below and try again.")
 
-    # ── Fixed chat bar at bottom ──
-    cols = st.columns([25, 1])
-
-
-
-    # JS to fix the chat bar (last horizontal block in main content) to viewport bottom
-    st.components.v1.html("""
-    <script>
-    setTimeout(function() {
-        var doc = window.parent.document;
-        // Only target horizontal blocks inside main content area, skip sidebar
-        var main = doc.querySelector('[data-testid="stMain"]');
-        if (!main) return;
-        var blocks = main.querySelectorAll('[data-testid="stHorizontalBlock"]');
-        for (var i = 0; i < blocks.length; i++) {
-            blocks[i].classList.remove('chat-bar-fixed');
-        }
-        var chat = blocks[blocks.length - 1];
-        if (chat) {
-            chat.classList.add('chat-bar-fixed');
-        }
-    }, 80);
-    </script>
-    """, height=0)
-
+    # ── Stop button (only while analysis is running) ──
     if st.session_state.get("analysis_running"):
-        with cols[0]:
-            st.text_input(
-                "Message",
-                value=st.session_state.get("chat_input_text", ""),
-                placeholder="AI is analyzing...",
-                label_visibility="collapsed",
-                key="chat_running_input",
-                disabled=True,
-            )
-        with cols[1]:
-            if st.button("■", key="stop_btn", help="Stop analysis"):
+        col_l, col_mid, col_r = st.columns([3, 2, 3])
+        with col_mid:
+            if st.button("■ Stop", key="stop_btn", use_container_width=True):
                 st.session_state.stop_requested = True
                 st.rerun()
-    else:
-        input_key = f"chat_input_{st.session_state.get('chat_input_key', 0)}"
-        with cols[0]:
-            user_input = st.text_input(
-                "Message",
-                placeholder="Ask a data question...",
-                label_visibility="collapsed",
-                key=input_key,
-            )
-        with cols[1]:
-            send_clicked = st.button("↑", key="send_btn", help="Send")
 
-        # Detect submission: Enter key or send button
-        text_val = (user_input or "").strip()
-        if text_val:
-            last_text = st.session_state.get("chat_input_text", "")
-            if send_clicked or text_val != last_text:
-                st.session_state.chat_input_text = text_val
-                st.session_state.pending_question = text_val
-                st.session_state.pending_metric_sql = None
-                st.session_state.analysis_running = True
-                st.session_state.stop_requested = False
-                st.rerun()
+    # ── Native chat input — always fixed at the bottom, never disappears ──
+    is_running = bool(st.session_state.get("analysis_running"))
+    user_input = st.chat_input(
+        "AI is analyzing..." if is_running else "Ask a data question...",
+        disabled=is_running,
+    )
+    if user_input and not is_running:
+        st.session_state.pending_question = user_input.strip()
+        st.session_state.pending_metric_sql = None
+        st.session_state.analysis_running = True
+        st.session_state.stop_requested = False
+        st.rerun()
 
 
 def main() -> None:
