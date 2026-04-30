@@ -58,11 +58,11 @@ ORDER BY total_gmv DESC
         "description": "Monthly GMV trend",
         "sql": """
 SELECT
-    LEFT(order_date, 6) AS year_month,
+    SUBSTR(order_date, 1, 6) AS year_month,
     CAST(SUM(gmv) AS DECIMAL(15,2)) AS total_gmv,
     COUNT(*) AS order_count
 FROM orders
-GROUP BY LEFT(order_date, 6)
+GROUP BY SUBSTR(order_date, 1, 6)
 ORDER BY year_month
 """,
         "chart": "line",

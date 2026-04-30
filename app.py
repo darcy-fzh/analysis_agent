@@ -387,6 +387,8 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
         else:
             st.error("Database Disconnected")
 
+        st.caption(db.config.display_name)
+
         st.divider()
 
         st.subheader("Data Overview")
