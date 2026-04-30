@@ -104,10 +104,15 @@ button[kind]:active {
     -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
     border-right: 1px solid rgba(0,0,0,0.06) !important;
 }
+[data-testid="stSidebar"] [data-testid="stTextInput"] div {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
 [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="input"] {
     border: none !important;
     box-shadow: none !important;
-    background: rgba(0,0,0,0.04) !important;
+    background: #e8e8ed !important;
     border-radius: 12px !important;
 }
 [data-testid="stSidebar"] [data-testid="stTextInput"] input {
