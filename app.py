@@ -4,6 +4,8 @@ import logging
 import os
 import sys
 
+import pandas as pd
+
 import streamlit as st
 
 from src.cache import QueryCache
@@ -416,9 +418,25 @@ def _execute_question(
             "from_cache": cached_result is not None,
         }
 
-    except ValueError as e:
-        st.warning(str(e))
-        db.save_query(q, error=str(e))
+    except ValueError:
+        # LLM couldn't convert to SQL — give a helpful chat response
+        st.session_state.last_result = {
+            "sql": "",
+            "df": pd.DataFrame(),
+            "insight": "",
+            "question": q,
+            "from_cache": False,
+            "chat_response": (
+                "I'm a data analysis assistant. I can help you query the "
+                "database with natural language. Try questions like:\n\n"
+                '- "What was the total GMV last month?"\n'
+                '- "Show me top 10 customers by orders"\n'
+                '- "Average order value by channel"\n'
+                '- "Monthly GMV trend for 2025"\n\n'
+                "I'll generate SQL, run the query, and show you the results!"
+            ),
+        }
+        db.save_query(q, error="non-data question")
     except Exception as e:
         st.error(f"Query failed: {e}")
         db.save_query(q, error=str(e))
@@ -617,13 +635,16 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         result = st.session_state.last_result
         _render_user(result["question"])
         with st.chat_message("assistant", avatar=None):
-            if result.get("from_cache"):
-                st.caption("Returned from cache")
-            _render_result(
-                result["df"], result["sql"],
-                hashlib.sha256(result["question"].encode()).hexdigest()[:12],
-                insight=result.get("insight", ""),
-            )
+            if result.get("chat_response"):
+                st.markdown(result["chat_response"])
+            else:
+                if result.get("from_cache"):
+                    st.caption("Returned from cache")
+                _render_result(
+                    result["df"], result["sql"],
+                    hashlib.sha256(result["question"].encode()).hexdigest()[:12],
+                    insight=result.get("insight", ""),
+                )
 
     elif st.session_state.get("stopped_question"):
         _render_user(st.session_state.stopped_question)
