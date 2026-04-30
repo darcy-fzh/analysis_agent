@@ -135,6 +135,23 @@ h3 {
     padding: 0 !important;
 }
 
+/* Fix chat bar (horizontal block after #chat-bar-anchor) to viewport bottom */
+[data-testid="stMarkdownContainer"]:has(#chat-bar-anchor) + [data-testid="stHorizontalBlock"] {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: var(--background-color) !important;
+    padding: 10px 20px !important;
+    z-index: 999 !important;
+    border-top: 1px solid var(--secondary-background-color) !important;
+}
+
+/* Prevent messages from being hidden behind fixed chat bar */
+[data-testid="stAppViewContainer"] > section {
+    padding-bottom: 70px !important;
+}
+
 </style>
 """
 
@@ -458,17 +475,7 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     st.title("Data Analysis AI Agent")
     st.caption("Ask questions in natural language — AI generates SQL and queries the database")
 
-    # ── Step 1: Get question from chat input (always at page bottom) ──
-    question = st.chat_input("Ask a data question...")
-
-    if question:
-        st.session_state.analysis_running = True
-        st.session_state.stop_requested = False
-        st.session_state.pending_question = question
-        st.session_state.pending_metric_sql = None
-        st.rerun()
-
-    # ── Step 2: Handle metric/history clicks or pending chat question ──
+    # ── Handle pending question (from chat submit or metric/history click) ──
     question = None
     metric_sql = None
     if "pending_question" in st.session_state and st.session_state.pending_question:
@@ -479,24 +486,19 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         st.session_state.analysis_running = True
         st.session_state.stop_requested = False
 
-    # ── Stop button (appears during analysis, right above chat input) ──
-    if st.session_state.get("analysis_running"):
-        col1, col2 = st.columns([9, 1])
-        with col2:
-            if st.button("■", key="stop_btn", help="Stop analysis"):
-                st.session_state.stop_requested = True
-                st.rerun()
-
     # ── Render chat messages ──
     if question:
         _render_user(question)
         with st.chat_message("assistant", avatar=None):
             _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
         st.session_state.analysis_running = False
-        if st.session_state.get("stop_requested"):
-            st.session_state.stopped_question = question
+        if not st.session_state.get("stop_requested"):
+            # Completed normally — clear input via key cycle
+            st.session_state.chat_input_key = st.session_state.get("chat_input_key", 0) + 1
+            st.session_state.chat_input_text = ""
         else:
-            st.session_state.stopped_question = None
+            # Stopped — keep text for editing
+            st.session_state.stopped_question = question
     elif "last_result" in st.session_state:
         result = st.session_state.last_result
         _render_user(result["question"])
@@ -507,6 +509,48 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     elif st.session_state.get("stopped_question"):
         _render_user(st.session_state.stopped_question)
         st.info("Analysis stopped — you can edit your question below and try again.")
+
+    # ── Fixed chat bar at bottom ──
+    st.markdown('<div id="chat-bar-anchor" style="display:none;"></div>', unsafe_allow_html=True)
+    cols = st.columns([25, 1])
+
+    if st.session_state.get("analysis_running"):
+        with cols[0]:
+            st.text_input(
+                "Message",
+                value=st.session_state.get("chat_input_text", ""),
+                placeholder="AI is analyzing...",
+                label_visibility="collapsed",
+                key="chat_running_input",
+                disabled=True,
+            )
+        with cols[1]:
+            if st.button("■", key="stop_btn", help="Stop analysis"):
+                st.session_state.stop_requested = True
+                st.rerun()
+    else:
+        input_key = f"chat_input_{st.session_state.get('chat_input_key', 0)}"
+        with cols[0]:
+            user_input = st.text_input(
+                "Message",
+                placeholder="Ask a data question...",
+                label_visibility="collapsed",
+                key=input_key,
+            )
+        with cols[1]:
+            send_clicked = st.button("↑", key="send_btn", help="Send")
+
+        # Detect submission: Enter key or send button
+        text_val = (user_input or "").strip()
+        if text_val:
+            last_text = st.session_state.get("chat_input_text", "")
+            if send_clicked or text_val != last_text:
+                st.session_state.chat_input_text = text_val
+                st.session_state.pending_question = text_val
+                st.session_state.pending_metric_sql = None
+                st.session_state.analysis_running = True
+                st.session_state.stop_requested = False
+                st.rerun()
 
 
 def main() -> None:
