@@ -168,7 +168,7 @@ h3 {
 /* Stop bar — styled like the native chat input */
 [data-testid="stMain"] .stop-bar {
     background: var(--secondary-background-color);
-    border: 1px solid var(--border-color);
+    border: none;
     border-radius: 0.5rem;
     padding: 6px 0;
     margin: 6px 0;
