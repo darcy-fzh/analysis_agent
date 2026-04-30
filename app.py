@@ -1,3 +1,4 @@
+import html
 import logging
 import sys
 
@@ -115,59 +116,48 @@ h3 {
     font-weight: 500 !important;
 }
 
-/* User avatar: keep in DOM for :has() targeting, but zero-size, no layout */
-[data-testid="stChatMessageAvatar"] {
-    position: absolute !important;
-    width: 0 !important;
-    height: 0 !important;
-    min-width: 0 !important;
-    overflow: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-}
-
-/* Chat message container — default left-aligned (assistant) */
+/* Chat message container — clean, no avatars */
 [data-testid="stChatMessage"] {
-    justify-content: flex-start !important;
     flex-direction: row !important;
 }
-
-/* Chat bubbles — default: left, transparent, fit to text */
+[data-testid="stChatMessageAvatar"] {
+    display: none !important;
+}
 [data-testid="stChatMessage"] > div {
     background: transparent !important;
-    border-radius: 12px !important;
-    padding: 0.5rem 0.9rem !important;
     border: none !important;
     box-shadow: none !important;
-    width: fit-content !important;
-    max-width: 75% !important;
-}
-
-/* User message (has avatar in DOM) — right-aligned, gray bg */
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatar"]) {
-    justify-content: flex-end !important;
-}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatar"]) > div {
-    background-color: #f3f4f6 !important;
-}
-
-/* Stop button over chat input — round dark square like Gemini/ChatGPT */
-.stop-btn-area {
-    position: fixed !important;
-    bottom: 18px !important;
-    right: 42px !important;
-    z-index: 9999 !important;
-}
-.stop-btn-area button {
-    border-radius: 6px !important;
-    width: 30px !important;
-    height: 30px !important;
     padding: 0 !important;
-    min-width: 30px !important;
+}
+
+/* Fixed chat bar at bottom */
+.chat-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 20px;
+    background: var(--background-color);
+    z-index: 999;
+    border-top: 1px solid var(--secondary-background-color);
+}
+
+/* Push main content above fixed chat bar */
+[data-testid="stAppViewContainer"] > section:first-child {
+    padding-bottom: 80px !important;
+}
+
+/* Send/stop button in chat bar */
+.chat-btn {
+    border-radius: 6px !important;
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    min-width: 32px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    font-size: 14px !important;
+    font-size: 15px !important;
     background: #374151 !important;
     color: #fff !important;
     border: none !important;
@@ -190,6 +180,18 @@ def get_llm() -> LLMService:
 @st.cache_resource
 def get_cache() -> QueryCache:
     return QueryCache(ttl=300)
+
+
+def _render_user(text: str) -> None:
+    """Render user message — right-aligned gray bubble, fit to text."""
+    escaped = html.escape(text)
+    st.markdown(
+        f'<div style="display:flex;justify-content:flex-end;margin:6px 0;">'
+        f'<div style="background:#f3f4f6;border-radius:14px;padding:8px 14px;'
+        f'max-width:75%;width:fit-content;text-align:left;">'
+        f'{escaped}</div></div>',
+        unsafe_allow_html=True,
+    )
 
 
 def _render_result(df, sql: str, key_suffix: str, insight: str = "") -> None:
@@ -484,40 +486,77 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     st.title("Data Analysis AI Agent")
     st.caption("Ask questions in natural language — AI generates SQL and queries the database")
 
-    question = st.chat_input("Ask a data question...")
+    # ── Fixed chat bar at bottom ──
+    st.markdown('<div class="chat-bar">', unsafe_allow_html=True)
+    cols = st.columns([30, 1])
 
-    # Handle metric or history clicks (rerouted via session state)
+    if st.session_state.get("analysis_running"):
+        with cols[0]:
+            st.text_input(
+                "Message",
+                value=st.session_state.get("chat_input_value", ""),
+                placeholder="AI is analyzing...",
+                label_visibility="collapsed",
+                key="chat_disabled",
+                disabled=True,
+            )
+        with cols[1]:
+            if st.button("■", key="stop_btn", help="Stop analysis"):
+                st.session_state.stop_requested = True
+                st.rerun()
+    else:
+        with cols[0]:
+            user_input = st.text_input(
+                "Message",
+                value=st.session_state.get("chat_input_value", ""),
+                placeholder="Ask a data question...",
+                label_visibility="collapsed",
+                key="chat_input",
+            )
+        with cols[1]:
+            send_clicked = st.button("↑", key="send_btn", help="Send")
+
+        # Detect Enter key (value changed) or send button click
+        current = user_input or ""
+        last = st.session_state.get("chat_input_last", "")
+        submitted = None
+        if send_clicked and current.strip():
+            submitted = current.strip()
+        elif current.strip() and current != last:
+            submitted = current.strip()
+
+        if submitted:
+            st.session_state.chat_input_last = submitted
+            st.session_state.chat_input_value = submitted
+            st.session_state.pending_question = submitted
+            st.session_state.pending_metric_sql = None
+            st.rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ── Handle metric or history clicks ──
+    question = None
+    metric_sql = None
     if "pending_question" in st.session_state and st.session_state.pending_question:
         question = st.session_state.pending_question
         metric_sql = st.session_state.pending_metric_sql
         st.session_state.pending_question = None
         st.session_state.pending_metric_sql = None
-    else:
-        metric_sql = None
-
-    # Set running flag early so stop button renders during analysis
-    if question:
         st.session_state.analysis_running = True
         st.session_state.stop_requested = False
 
-    # Stop button over chat input — only during analysis
-    if st.session_state.get("analysis_running"):
-        st.markdown('<div class="stop-btn-area">', unsafe_allow_html=True)
-        if st.button("■", key="stop_btn"):
-            st.session_state.stop_requested = True
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
-
+    # ── Render chat messages ──
     if question:
-        with st.chat_message("user"):
-            st.write(question)
+        _render_user(question)
         with st.chat_message("assistant", avatar=None):
             _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
         st.session_state.analysis_running = False
+        if not st.session_state.get("stop_requested"):
+            st.session_state.chat_input_value = ""
+            st.session_state.chat_input_last = ""
     elif "last_result" in st.session_state:
         result = st.session_state.last_result
-        with st.chat_message("user"):
-            st.write(result["question"])
+        _render_user(result["question"])
         with st.chat_message("assistant", avatar=None):
             if result.get("from_cache"):
                 st.caption("Returned from cache")
