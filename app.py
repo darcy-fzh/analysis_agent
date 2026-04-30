@@ -1,3 +1,4 @@
+import html
 import logging
 import sys
 
@@ -147,10 +148,12 @@ section[data-testid="stChatMessage"] {
     box-shadow: none !important;
 }
 
-/* User message — same gray border + background as chat input */
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatar-user"]) > div {
+/* User message bubble — same gray border + background as chat input */
+.user-bubble {
     background-color: var(--secondary-background-color) !important;
     border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 0.9rem !important;
 }
 </style>
 """
@@ -169,6 +172,15 @@ def get_llm() -> LLMService:
 @st.cache_resource
 def get_cache() -> QueryCache:
     return QueryCache(ttl=300)
+
+
+def _render_user_bubble(text: str) -> None:
+    """Render user question in a styled bubble matching the chat input."""
+    escaped = html.escape(text)
+    st.markdown(
+        f'<div class="user-bubble">{escaped}</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def _render_result(df, sql: str, key_suffix: str, insight: str = "") -> None:
@@ -461,13 +473,13 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
 
     if question:
         with st.chat_message("user", avatar=None):
-            st.write(question)
+            _render_user_bubble(question)
         with st.chat_message("assistant", avatar=None):
             _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
     elif "last_result" in st.session_state:
         result = st.session_state.last_result
         with st.chat_message("user", avatar=None):
-            st.write(result["question"])
+            _render_user_bubble(result["question"])
         with st.chat_message("assistant", avatar=None):
             if result.get("from_cache"):
                 st.caption("Returned from cache")
