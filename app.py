@@ -130,39 +130,6 @@ h3 {
     padding: 0 !important;
 }
 
-/* Fixed chat bar at bottom */
-.chat-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 10px 20px;
-    background: var(--background-color);
-    z-index: 999;
-    border-top: 1px solid var(--secondary-background-color);
-}
-
-/* Push main content above fixed chat bar */
-[data-testid="stAppViewContainer"] > section:first-child {
-    padding-bottom: 80px !important;
-}
-
-/* Send/stop button in chat bar */
-.chat-btn {
-    border-radius: 6px !important;
-    width: 32px !important;
-    height: 32px !important;
-    padding: 0 !important;
-    min-width: 32px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 15px !important;
-    background: #374151 !important;
-    color: #fff !important;
-    border: none !important;
-    line-height: 1 !important;
-}
 </style>
 """
 
@@ -486,8 +453,36 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     st.title("Data Analysis AI Agent")
     st.caption("Ask questions in natural language — AI generates SQL and queries the database")
 
-    # ── Fixed chat bar at bottom ──
-    st.markdown('<div class="chat-bar">', unsafe_allow_html=True)
+    # ── Handle metric or history clicks (must be before chat bar) ──
+    question = None
+    metric_sql = None
+    if "pending_question" in st.session_state and st.session_state.pending_question:
+        question = st.session_state.pending_question
+        metric_sql = st.session_state.pending_metric_sql
+        st.session_state.pending_question = None
+        st.session_state.pending_metric_sql = None
+        st.session_state.analysis_running = True
+        st.session_state.stop_requested = False
+
+    # ── Render chat messages ──
+    if question:
+        _render_user(question)
+        with st.chat_message("assistant", avatar=None):
+            _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
+        st.session_state.analysis_running = False
+        if not st.session_state.get("stop_requested"):
+            st.session_state.chat_input_value = ""
+            st.session_state.chat_input_last = ""
+    elif "last_result" in st.session_state:
+        result = st.session_state.last_result
+        _render_user(result["question"])
+        with st.chat_message("assistant", avatar=None):
+            if result.get("from_cache"):
+                st.caption("Returned from cache")
+            _render_result(result["df"], result["sql"], str(hash(result["question"])), insight=result.get("insight", ""))
+
+    # ── Chat bar at bottom ──
+    st.markdown("<br>", unsafe_allow_html=True)
     cols = st.columns([30, 1])
 
     if st.session_state.get("analysis_running"):
@@ -530,37 +525,9 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
             st.session_state.chat_input_value = submitted
             st.session_state.pending_question = submitted
             st.session_state.pending_metric_sql = None
+            st.session_state.analysis_running = True
+            st.session_state.stop_requested = False
             st.rerun()
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # ── Handle metric or history clicks ──
-    question = None
-    metric_sql = None
-    if "pending_question" in st.session_state and st.session_state.pending_question:
-        question = st.session_state.pending_question
-        metric_sql = st.session_state.pending_metric_sql
-        st.session_state.pending_question = None
-        st.session_state.pending_metric_sql = None
-        st.session_state.analysis_running = True
-        st.session_state.stop_requested = False
-
-    # ── Render chat messages ──
-    if question:
-        _render_user(question)
-        with st.chat_message("assistant", avatar=None):
-            _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
-        st.session_state.analysis_running = False
-        if not st.session_state.get("stop_requested"):
-            st.session_state.chat_input_value = ""
-            st.session_state.chat_input_last = ""
-    elif "last_result" in st.session_state:
-        result = st.session_state.last_result
-        _render_user(result["question"])
-        with st.chat_message("assistant", avatar=None):
-            if result.get("from_cache"):
-                st.caption("Returned from cache")
-            _render_result(result["df"], result["sql"], str(hash(result["question"])), insight=result.get("insight", ""))
 
 
 def main() -> None:
