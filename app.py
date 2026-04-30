@@ -226,6 +226,14 @@ def _render_result(df, sql: str, key_suffix: str, insight: str = "") -> None:
                     st.pyplot(fig)
                     plt.close(fig)
 
+def _stop_requested() -> bool:
+    """Check if user clicked stop, and show a message if so."""
+    if st.session_state.get("stop_requested"):
+        st.info("Analysis stopped")
+        return True
+    return False
+
+
 def _gen_insight(llm: LLMService, question: str, sql: str, df) -> str:
     """Generate a plain-English summary of query results, with spinner."""
     if df.empty:
@@ -259,11 +267,16 @@ def _execute_question(
                 return
             with st.spinner("Running metric query..."):
                 df = db.execute_query(sql)
+            if _stop_requested():
+                return
             insight = _gen_insight(llm, q, sql, df)
             cache.set(q, schema_version, (sql, df, insight))
         else:
             with st.spinner("AI is generating SQL..."):
                 sql = llm.generate_sql(q, schema)
+
+            if _stop_requested():
+                return
 
             valid, err_msg = DatabaseManager.validate_sql(sql)
             if not valid:
@@ -273,6 +286,8 @@ def _execute_question(
 
             with st.spinner("Querying database..."):
                 df = db.execute_query(sql)
+            if _stop_requested():
+                return
             insight = _gen_insight(llm, q, sql, df)
             cache.set(q, schema_version, (sql, df, insight))
 
@@ -442,21 +457,7 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     st.title("Data Analysis AI Agent")
     st.caption("Ask questions in natural language — AI generates SQL and queries the database")
 
-    # Input row: text input + stop button
-    col_input, col_stop = st.columns([20, 1])
-    with col_input:
-        question = st.text_input(
-            "Ask a data question...",
-            placeholder="Ask a data question...",
-            label_visibility="collapsed",
-            key="main_chat_input",
-        )
-    with col_stop:
-        stop_clicked = st.button("⏹", help="Stop analysis", key="stop_btn", use_container_width=True)
-
-    if stop_clicked:
-        st.session_state.stop_requested = True
-        st.rerun()
+    question = st.chat_input("Ask a data question...")
 
     # Handle metric or history clicks (rerouted via session state)
     if "pending_question" in st.session_state and st.session_state.pending_question:
@@ -464,18 +465,25 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         metric_sql = st.session_state.pending_metric_sql
         st.session_state.pending_question = None
         st.session_state.pending_metric_sql = None
-        # Clear the text input
-        st.session_state.main_chat_input = ""
     else:
         metric_sql = None
 
+    # Floating stop button — only during analysis
+    if st.session_state.get("analysis_running"):
+        st.markdown("""<div class="stop-btn-area" style="position:fixed;bottom:76px;right:28px;z-index:9999;">""", unsafe_allow_html=True)
+        if st.button("⏹ Stop", key="stop_btn"):
+            st.session_state.stop_requested = True
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+
     if question:
+        st.session_state.analysis_running = True
         st.session_state.stop_requested = False
-        st.session_state.main_chat_input = ""
         with st.chat_message("user"):
             st.write(question)
         with st.chat_message("assistant", avatar=None):
             _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
+        st.session_state.analysis_running = False
     elif "last_result" in st.session_state:
         result = st.session_state.last_result
         with st.chat_message("user"):
