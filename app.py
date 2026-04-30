@@ -87,12 +87,12 @@ input:focus-visible, textarea:focus-visible {
     align-items: center !important;
 }
 /* Query history delete button — compact, no padding, small font */
-[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) > div:first-child {
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) > div:last-child {
     flex: 0 0 22px !important;
     min-width: 22px !important;
     max-width: 22px !important;
 }
-[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) > div:first-child button {
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) > div:last-child button {
     padding: 0 !important;
     font-size: 11px !important;
     line-height: 1 !important;
@@ -100,7 +100,7 @@ input:focus-visible, textarea:focus-visible {
     height: 22px !important;
     width: 22px !important;
 }
-[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) > div:last-child {
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) > div:first-child {
     flex: 1 1 0 !important;
     min-width: 0 !important;
     overflow: hidden !important;
@@ -472,8 +472,17 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
                 for row in recent:
                     label = row["question"][:60] + ("..." if len(row["question"]) > 60 else "")
                     status = "ERR" if row["error"] else f"{row['result_rows'] or 0}r"
-                    col1, col2 = st.columns([1, 9])
+                    col1, col2 = st.columns([9, 1])
                     with col1:
+                        if st.button(
+                            f"[{status}] {label}",
+                            key=f"hist_{row['id']}",
+                            use_container_width=True,
+                        ):
+                            st.session_state.pending_question = row["question"]
+                            st.session_state.pending_metric_sql = None
+                            st.rerun()
+                    with col2:
                         if st.button(
                             "✕",
                             key=f"del_{row['id']}",
@@ -482,15 +491,6 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
                             use_container_width=True,
                         ):
                             db.delete_query(row["id"])
-                            st.rerun()
-                    with col2:
-                        if st.button(
-                            f"[{status}] {label}",
-                            key=f"hist_{row['id']}",
-                            use_container_width=True,
-                        ):
-                            st.session_state.pending_question = row["question"]
-                            st.session_state.pending_metric_sql = None
                             st.rerun()
             except Exception:
                 st.caption("History unavailable")
