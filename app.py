@@ -163,12 +163,14 @@ h3 {
     font-size: 16px !important;
 }
 
-/* Collapse the chat form's own container — its stHorizontalBlock is fixed
-   to the viewport bottom by JS (position:fixed removes it from flow).
-   height:0 + min-height:0 ensures nothing remains visible at the top. */
+/* Collapse the chat form's outer wrappers so they take no space in document
+   flow. Use direct-child (>) selectors so we only collapse the form's own
+   shells — NOT the stVerticalBlock column wrappers inside stHorizontalBlock
+   (those also have data-testid="stVerticalBlock" and would become height:0
+   with a descendant selector, hiding the text input and button). */
 [data-testid="stMain"] [data-testid="stForm"],
 [data-testid="stMain"] [data-testid="stForm"] > div,
-[data-testid="stMain"] [data-testid="stForm"] [data-testid="stVerticalBlock"] {
+[data-testid="stMain"] [data-testid="stForm"] > div > [data-testid="stVerticalBlock"] {
     height: 0 !important;
     min-height: 0 !important;
     border: none !important;
