@@ -82,11 +82,19 @@ input:focus-visible, textarea:focus-visible {
     min-width: unset !important;
 }
 
-/* Query history delete button — fixed narrow width, never wraps */
+/* Query history delete button — compact, no padding, small font */
 [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) > div:first-child {
-    flex: 0 0 28px !important;
-    min-width: 28px !important;
-    max-width: 28px !important;
+    flex: 0 0 22px !important;
+    min-width: 22px !important;
+    max-width: 22px !important;
+}
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) > div:first-child button {
+    padding: 0 !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    min-height: 22px !important;
+    height: 22px !important;
+    width: 22px !important;
 }
 [data-testid="stSidebar"] [data-testid="stHorizontalBlock"]:has(button) > div:last-child {
     flex: 1 1 0 !important;
@@ -457,6 +465,7 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
                             "✕",
                             key=f"del_{row['id']}",
                             help="Delete this entry",
+                            type="tertiary",
                             use_container_width=True,
                         ):
                             db.delete_query(row["id"])
@@ -499,7 +508,7 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     if st.session_state.get("analysis_running"):
         _, stop_col, _ = st.columns([4, 2, 4])
         with stop_col:
-            if st.button("■ Stop analysis", key="stop_btn", use_container_width=True):
+            if st.button("■ Stop analysis", key="stop_btn", type="tertiary", use_container_width=True):
                 st.session_state.stop_requested = True
                 st.session_state.analysis_running = False
                 st.session_state.stopped_question = (
