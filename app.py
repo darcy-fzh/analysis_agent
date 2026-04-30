@@ -166,8 +166,8 @@ h3 {
 }
 
 /* Stop button bar — background box like chat input, no border */
-[data-testid="stMain"] [data-testid="stHorizontalBlock"]:has(button[kind="tertiary"]) {
-    background: var(--secondary-background-color) !important;
+[data-testid="stMain"] [data-testid="stHorizontalBlock"]:has([data-testid="baseButton-tertiary"]) {
+    background: #f0f2f6 !important;
     border: none !important;
     border-radius: 0.5rem !important;
     padding: 4px 0 !important;
