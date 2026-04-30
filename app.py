@@ -272,7 +272,7 @@ def _render_user(text: str) -> None:
     escaped = html.escape(text)
     st.markdown(
         f'<div style="display:flex;justify-content:flex-end;margin:8px 0;">'
-        f'<div style="background:#007AFF;color:#fff;border-radius:14px;'
+        f'<div style="background:#007AFF;color:#fff;border-radius:8px;'
         f'padding:10px 16px;max-width:75%;width:fit-content;text-align:left;'
         f'font-size:15px;font-weight:450;line-height:1.4;'
         f'box-shadow:0 1px 3px rgba(0,122,255,0.2);">'
