@@ -166,12 +166,16 @@ h3 {
 }
 
 /* Stop button bar — background box like chat input, no border */
+[data-st-key="stop_bar"],
 [data-testid="stMain"] [data-testid="stHorizontalBlock"]:has([data-testid="baseButton-tertiary"]) {
     background: #f0f2f6 !important;
     border: none !important;
     border-radius: 0.5rem !important;
     padding: 4px 0 !important;
     margin: 6px 0 !important;
+}
+[data-st-key="stop_bar"] [data-testid="stHorizontalBlock"] {
+    background: transparent !important;
 }
 
 </style>
@@ -519,16 +523,17 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     # Rendering it here (conditional on analysis_running) ensures it survives
     # every rerun and its click is always processed.
     if st.session_state.get("analysis_running"):
-        _, stop_col, _ = st.columns([4, 2, 4])
-        with stop_col:
-            if st.button("■ Stop analysis", key="stop_btn", type="tertiary", use_container_width=True):
-                st.session_state.stop_requested = True
-                st.session_state.analysis_running = False
-                st.session_state.stopped_question = (
-                    st.session_state.get("current_question", "")
-                )
-                st.session_state.pop("last_result", None)
-                st.rerun()
+        with st.container(key="stop_bar"):
+            _, stop_col, _ = st.columns([4, 2, 4])
+            with stop_col:
+                if st.button("■ Stop analysis", key="stop_btn", type="tertiary", use_container_width=True):
+                    st.session_state.stop_requested = True
+                    st.session_state.analysis_running = False
+                    st.session_state.stopped_question = (
+                        st.session_state.get("current_question", "")
+                    )
+                    st.session_state.pop("last_result", None)
+                    st.rerun()
 
     # ── Render conversation ──
     if question:
