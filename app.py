@@ -147,9 +147,10 @@ section[data-testid="stChatMessage"] {
     box-shadow: none !important;
 }
 
-/* User message — background like the chat input box */
+/* User message — same gray border + background as chat input */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatar-user"]) > div {
     background-color: var(--secondary-background-color) !important;
+    border: 1px solid #d1d5db !important;
 }
 </style>
 """
