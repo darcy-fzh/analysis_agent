@@ -163,6 +163,18 @@ h3 {
     font-size: 16px !important;
 }
 
+/* Collapse the chat form's own container — its stHorizontalBlock is fixed
+   at the viewport bottom by JS, so the wrapper must be invisible. */
+[data-testid="stMain"] [data-testid="stForm"],
+[data-testid="stMain"] [data-testid="stForm"] > div,
+[data-testid="stMain"] [data-testid="stForm"] [data-testid="stVerticalBlock"] {
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
 </style>
 """
 
@@ -176,28 +188,51 @@ CHAT_BAR_JS = """
     if (window.parent._chatBarObserver) {
         window.parent._chatBarObserver.disconnect();
     }
+
+    function applyFixed(el) {
+        el.style.setProperty('position',         'fixed',                             'important');
+        el.style.setProperty('bottom',           '0',                                 'important');
+        el.style.setProperty('left',             '0',                                 'important');
+        el.style.setProperty('right',            '0',                                 'important');
+        el.style.setProperty('z-index',          '999',                               'important');
+        el.style.setProperty('padding',          '10px 16px 12px',                    'important');
+        el.style.setProperty('margin',           '0',                                 'important');
+        el.style.setProperty('border-top',       '1px solid rgba(128,128,128,0.15)',   'important');
+        el.style.setProperty('border-left',      'none',                              'important');
+        el.style.setProperty('border-right',     'none',                              'important');
+        el.style.setProperty('border-bottom',    'none',                              'important');
+        el.style.setProperty('border-radius',    '0',                                 'important');
+        el.style.setProperty('background-color', 'var(--background-color)',           'important');
+        el.style.setProperty('box-sizing',       'border-box',                        'important');
+    }
+
     function fix() {
         var main = doc.querySelector('[data-testid="stMain"]');
         if (!main) return;
         var blocks = main.querySelectorAll('[data-testid="stHorizontalBlock"]');
         for (var i = blocks.length - 1; i >= 0; i--) {
             if (blocks[i].querySelector('[data-testid="stTextInput"]')) {
-                var bar = blocks[i];
-                bar.style.setProperty('position',   'fixed',                           'important');
-                bar.style.setProperty('bottom',     '0',                               'important');
-                bar.style.setProperty('left',       '0',                               'important');
-                bar.style.setProperty('right',      '0',                               'important');
-                bar.style.setProperty('z-index',    '999',                             'important');
-                bar.style.setProperty('padding',    '10px 16px 12px',                  'important');
-                bar.style.setProperty('margin',     '0',                               'important');
-                bar.style.setProperty('border-top', '1px solid rgba(128,128,128,0.15)','important');
-                bar.style.setProperty('background-color', 'var(--background-color)',   'important');
-                bar.style.setProperty('box-sizing', 'border-box',                      'important');
+                // Walk up: fix stForm if present, otherwise fix the stHorizontalBlock.
+                // This ensures the whole form container is removed from document flow,
+                // not just the inner row — preventing a ghost box at the top.
+                var target = blocks[i];
+                var cur = blocks[i].parentElement;
+                while (cur && cur !== doc.body) {
+                    if (cur.getAttribute('data-testid') === 'stMain') break;
+                    if (cur.getAttribute('data-testid') === 'stForm') {
+                        target = cur;
+                        break;
+                    }
+                    cur = cur.parentElement;
+                }
+                applyFixed(target);
                 return;
             }
         }
     }
+
     fix();
+    setTimeout(fix, 0);   // also run after current render cycle
     window.parent._chatBarObserver = new MutationObserver(fix);
     window.parent._chatBarObserver.observe(doc.body, { childList: true, subtree: true });
 })();
