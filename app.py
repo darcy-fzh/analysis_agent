@@ -490,22 +490,31 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         st.session_state.stop_requested = False
         st.session_state.current_question = question  # saved so stop can restore it
 
+    # ── Stop button — must render OUTSIDE the `if question:` block. ──
+    # During the rerun that processes the button click, `question` is None
+    # (pending_question was already consumed), so the button would not appear
+    # inside `if question:` → the click is lost → analysis_running stays True.
+    # Rendering it here (conditional on analysis_running) ensures it survives
+    # every rerun and its click is always processed.
+    if st.session_state.get("analysis_running"):
+        _, stop_col, _ = st.columns([4, 2, 4])
+        with stop_col:
+            if st.button("■ Stop analysis", key="stop_btn", use_container_width=True):
+                st.session_state.stop_requested = True
+                st.session_state.analysis_running = False
+                st.session_state.stopped_question = (
+                    st.session_state.get("current_question", "")
+                )
+                st.session_state.pop("last_result", None)
+                st.rerun()
+
     # ── Render conversation ──
     if question:
         # User bubble
         _render_user(question)
 
-        # Execute analysis — stop button rendered inside assistant bubble
+        # Execute analysis
         with st.chat_message("assistant", avatar=None):
-            # Stop button inside assistant bubble so it's visually part of the response.
-            # Placed before _execute_question() so it's in the DOM during analysis.
-            if st.button("■ Stop analysis", key="stop_btn", use_container_width=True):
-                st.session_state.stop_requested = True
-                st.session_state.analysis_running = False
-                st.session_state.stopped_question = question
-                st.session_state.pop("last_result", None)  # prevent stale result from overriding stop
-                st.rerun()
-
             _execute_question(db, llm, cache, question, use_metric_sql=metric_sql)
 
         # Analysis finished normally — save result and rerun without the stop button
