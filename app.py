@@ -115,14 +115,8 @@ h3 {
     font-weight: 500 !important;
 }
 
-/* Chat — hide avatars for assistant only */
-[data-testid="stChatMessageAvatar-assistant"],
-.stDeployedAppMessageAvatar {
-    display: none !important;
-}
-
-/* User avatar — shrink to invisible but keep in DOM for :has() targeting */
-[data-testid="stChatMessageAvatar-user"] {
+/* Chat — user avatar shrink to invisible (but keep in DOM for targeting) */
+[data-testid="stChatMessageAvatar"] {
     width: 0 !important;
     height: 0 !important;
     min-width: 0 !important;
@@ -130,22 +124,16 @@ h3 {
     opacity: 0 !important;
 }
 
-/* Chat rows — force left for both user and assistant */
+/* Chat rows — force left alignment */
 [data-testid="stChatMessage"] {
     max-width: 80%;
-    background: transparent !important;
     margin-left: 0 !important;
     margin-right: auto !important;
     justify-content: flex-start !important;
-}
-
-/* Override Streamlit row-reverse for user messages */
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatar-user"]),
-section[data-testid="stChatMessage"] {
     flex-direction: row !important;
 }
 
-/* Chat bubbles */
+/* Chat bubbles — transparent by default (assistant) */
 [data-testid="stChatMessage"] > div {
     background: transparent !important;
     border-radius: 8px !important;
@@ -154,8 +142,8 @@ section[data-testid="stChatMessage"] {
     box-shadow: none !important;
 }
 
-/* User message — gray background like chat input */
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatar-user"]) > div {
+/* User message — gray background (only user messages have avatars) */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatar"]) > div {
     background-color: #f3f4f6 !important;
 }
 </style>
@@ -454,7 +442,21 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     st.title("Data Analysis AI Agent")
     st.caption("Ask questions in natural language — AI generates SQL and queries the database")
 
-    question = st.chat_input("Ask a data question...")
+    # Input row: text input + stop button
+    col_input, col_stop = st.columns([20, 1])
+    with col_input:
+        question = st.text_input(
+            "Ask a data question...",
+            placeholder="Ask a data question...",
+            label_visibility="collapsed",
+            key="main_chat_input",
+        )
+    with col_stop:
+        stop_clicked = st.button("⏹", help="Stop analysis", key="stop_btn", use_container_width=True)
+
+    if stop_clicked:
+        st.session_state.stop_requested = True
+        st.rerun()
 
     # Handle metric or history clicks (rerouted via session state)
     if "pending_question" in st.session_state and st.session_state.pending_question:
@@ -462,10 +464,14 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         metric_sql = st.session_state.pending_metric_sql
         st.session_state.pending_question = None
         st.session_state.pending_metric_sql = None
+        # Clear the text input
+        st.session_state.main_chat_input = ""
     else:
         metric_sql = None
 
     if question:
+        st.session_state.stop_requested = False
+        st.session_state.main_chat_input = ""
         with st.chat_message("user"):
             st.write(question)
         with st.chat_message("assistant", avatar=None):
