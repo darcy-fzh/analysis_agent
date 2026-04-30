@@ -115,36 +115,63 @@ h3 {
     font-weight: 500 !important;
 }
 
-/* Chat — user avatar shrink to invisible (but keep in DOM for targeting) */
+/* User avatar: keep in DOM for :has() targeting, but zero-size, no layout */
 [data-testid="stChatMessageAvatar"] {
+    position: absolute !important;
     width: 0 !important;
     height: 0 !important;
     min-width: 0 !important;
     overflow: hidden !important;
     opacity: 0 !important;
+    pointer-events: none !important;
 }
 
-/* Chat rows — force left alignment */
+/* Chat message container — default left-aligned (assistant) */
 [data-testid="stChatMessage"] {
-    max-width: 80%;
-    margin-left: 0 !important;
-    margin-right: auto !important;
     justify-content: flex-start !important;
     flex-direction: row !important;
 }
 
-/* Chat bubbles — transparent by default (assistant) */
+/* Chat bubbles — default: left, transparent, fit to text */
 [data-testid="stChatMessage"] > div {
     background: transparent !important;
-    border-radius: 8px !important;
-    padding: 0.4rem 0.9rem !important;
+    border-radius: 12px !important;
+    padding: 0.5rem 0.9rem !important;
     border: none !important;
     box-shadow: none !important;
+    width: fit-content !important;
+    max-width: 75% !important;
 }
 
-/* User message — gray background (only user messages have avatars) */
+/* User message (has avatar in DOM) — right-aligned, gray bg */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatar"]) {
+    justify-content: flex-end !important;
+}
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatar"]) > div {
     background-color: #f3f4f6 !important;
+}
+
+/* Stop button over chat input — round dark square like Gemini/ChatGPT */
+.stop-btn-area {
+    position: fixed !important;
+    bottom: 18px !important;
+    right: 42px !important;
+    z-index: 9999 !important;
+}
+.stop-btn-area button {
+    border-radius: 6px !important;
+    width: 30px !important;
+    height: 30px !important;
+    padding: 0 !important;
+    min-width: 30px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 14px !important;
+    background: #374151 !important;
+    color: #fff !important;
+    border: none !important;
+    line-height: 1 !important;
 }
 </style>
 """
@@ -468,17 +495,20 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     else:
         metric_sql = None
 
-    # Floating stop button — only during analysis
+    # Set running flag early so stop button renders during analysis
+    if question:
+        st.session_state.analysis_running = True
+        st.session_state.stop_requested = False
+
+    # Stop button over chat input — only during analysis
     if st.session_state.get("analysis_running"):
-        st.markdown("""<div class="stop-btn-area" style="position:fixed;bottom:76px;right:28px;z-index:9999;">""", unsafe_allow_html=True)
-        if st.button("⏹ Stop", key="stop_btn"):
+        st.markdown('<div class="stop-btn-area">', unsafe_allow_html=True)
+        if st.button("■", key="stop_btn"):
             st.session_state.stop_requested = True
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
     if question:
-        st.session_state.analysis_running = True
-        st.session_state.stop_requested = False
         with st.chat_message("user"):
             st.write(question)
         with st.chat_message("assistant", avatar=None):
