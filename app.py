@@ -377,6 +377,7 @@ h3 {
 
 /* ── Push content above fixed chat input ───────────────────────── */
 [data-testid="stMain"] .stMainBlockContainer {
+    padding-top: 8px !important;
     padding-bottom: 90px !important;
 }
 
@@ -396,31 +397,62 @@ h3 {
     background: transparent !important;
 }
 
-/* ── Top-right header controls — compact, right-aligned ───────── */
+/* ── Top-right header controls — compact, borderless ──────────── */
 [data-st-key="top_ctrl_row"] {
-    margin-bottom: 0 !important;
+    margin-bottom: -4px !important;
 }
-[data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"] {
-    align-items: center !important;
-    gap: 6px !important;
-}
+/* Theme toggle button */
 [data-st-key="top_ctrl_row"] button[data-testid="baseButton-tertiary"] {
     font-size: 16px !important;
-    padding: 4px 8px !important;
-    height: 32px !important;
-    border-radius: 8px !important;
-    color: rgba(0,0,0,0.5) !important;
+    padding: 0 6px !important;
+    height: 26px !important;
+    border-radius: 6px !important;
+    color: rgba(0,0,0,0.45) !important;
     background: transparent !important;
+    border: none !important;
 }
 [data-st-key="top_ctrl_row"] button[data-testid="baseButton-tertiary"]:hover {
     background: rgba(0,0,0,0.05) !important;
-    color: rgba(0,0,0,0.85) !important;
+    color: rgba(0,0,0,0.8) !important;
 }
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
-    border-radius: 8px !important;
+/* Language selectbox — completely borderless, no box */
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] {
+    min-width: 0 !important;
+}
+[data-st-key="top_ctrl_row"] [data-baseweb="select"],
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] > div {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    min-height: 26px !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+}
+/* Inner flex row — value + arrow close together */
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] > div > div {
+    gap: 2px !important;
+    padding: 0 2px !important;
+    min-height: 26px !important;
+    align-items: center !important;
+}
+/* Text value */
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] span,
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] [class*="singleValue"],
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] [class*="placeholder"] {
     font-size: 13px !important;
-    min-height: 32px !important;
-    border: 1px solid rgba(0,0,0,0.08) !important;
+    font-weight: 500 !important;
+    color: rgba(0,0,0,0.55) !important;
+    padding: 0 !important;
+}
+/* Arrow — small and close */
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] svg {
+    width: 11px !important;
+    height: 11px !important;
+    color: rgba(0,0,0,0.38) !important;
+}
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] > div > div:last-child {
+    padding: 0 !important;
+    min-width: 0 !important;
 }
 
 </style>
@@ -999,16 +1031,23 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
 
 /* ── Top controls dark variant ────────────────────────────────── */
 [data-st-key="top_ctrl_row"] button[data-testid="baseButton-tertiary"] {
-    color: rgba(228,228,229,0.6) !important;
+    color: rgba(228,228,229,0.55) !important;
 }
 [data-st-key="top_ctrl_row"] button[data-testid="baseButton-tertiary"]:hover {
     background: rgba(255,255,255,0.08) !important;
     color: #e4e4e5 !important;
 }
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
-    background: rgba(44,44,46,0.9) !important;
-    border-color: rgba(255,255,255,0.08) !important;
-    color: #e4e4e5 !important;
+[data-st-key="top_ctrl_row"] [data-baseweb="select"],
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] > div {
+    background: transparent !important;
+    border: none !important;
+}
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] span,
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] [class*="singleValue"] {
+    color: rgba(228,228,229,0.6) !important;
+}
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] svg {
+    color: rgba(228,228,229,0.38) !important;
 }
 
 /* ── Color pickers ────────────────────────────────────────────── */
@@ -1018,13 +1057,13 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
 .js-plotly-plot .plotly .main-svg { background: transparent !important; }
         </style>""", unsafe_allow_html=True)
 
-    # ── Top-right controls — native Streamlit (always reliable) ────
+    # ── Top-right controls — pushed to the far right ────────────────
     with st.container(key="top_ctrl_row"):
-        _, h_right = st.columns([5, 2])
+        _, h_right = st.columns([12, 1])
         with h_right:
             c1, c2 = st.columns([1, 2])
             with c1:
-                # ◑ = dark mode on  ◐ = light mode (click to go dark)
+                # ◑ = dark on  ◐ = light (click toggles)
                 icon = "◑" if is_dark else "◐"
                 if st.button(icon, key="theme_btn", type="tertiary", use_container_width=True):
                     st.session_state.theme = "light" if is_dark else "dark"
@@ -1036,6 +1075,7 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
                     index=1 if cur_lang == "zh" else 0,
                     key="lang_sel",
                     label_visibility="collapsed",
+                    use_container_width=True,
                 )
                 target_lang = "zh" if chosen == "中文" else "en"
                 if target_lang != cur_lang:
