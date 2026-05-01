@@ -436,29 +436,23 @@ h3 {
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(0,0,0,0.05) !important;
 }
-/* Language selectbox — completely transparent, no border, no background.
-   Use html+body prefix to maximise specificity and beat BaseWeb's own rules. */
-html body [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
-html body [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
-html body [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within,
-html body [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div[aria-expanded="true"],
-html body [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div > div {
+/* Language selectbox — transparent, flat. Target all descendants. */
+html body [data-st-key="top_ctrl_row"] [data-baseweb="select"],
+html body [data-st-key="top_ctrl_row"] [data-baseweb="select"] * {
+    background: transparent !important;
+    background-color: transparent !important;
     border: none !important;
     border-color: transparent !important;
     box-shadow: none !important;
-    background: transparent !important;
-    background-color: transparent !important;
-    min-height: 28px !important;
     outline: none !important;
 }
-html body [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] span {
+html body [data-st-key="top_ctrl_row"] [data-baseweb="select"] span {
     font-size: 13px !important;
     font-weight: 500 !important;
 }
-html body [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] svg {
+html body [data-st-key="top_ctrl_row"] [data-baseweb="select"] svg {
     width: 14px !important;
     height: 14px !important;
-    margin-left: 1px !important;
 }
 
 </style>
@@ -1084,27 +1078,33 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
                     st.session_state.lang = new_lang
                     st.rerun()
 
-    # JS: strip background/border from the language selectbox via inline styles.
-    # CSS alone cannot reliably override BaseWeb's styled-components; injecting
-    # via a same-origin component iframe allows direct DOM manipulation.
+    # JS: inject a persistent <style> into window.parent.document.head.
+    # This survives React re-renders (unlike inline style patching) because
+    # the injected <style> tag lives in <head>, not on individual DOM nodes.
+    # Same-origin iframe access is allowed since components are served from
+    # the same Streamlit server.
     components.html("""<script>
 (function(){
-  function fix(){
-    try{
-      var d=window.parent.document;
-      var row=d.querySelector('[data-st-key="top_ctrl_row"]');
-      if(!row) return false;
-      row.querySelectorAll('[data-baseweb="select"] *').forEach(function(el){
-        el.style.setProperty('background','transparent','important');
-        el.style.setProperty('background-color','transparent','important');
-        el.style.setProperty('border','none','important');
-        el.style.setProperty('box-shadow','none','important');
-        el.style.setProperty('outline','none','important');
-      });
+  function inject(){
+    try {
+      var doc = window.parent.document;
+      if (doc.getElementById('_lang_sel_fix')) return true;
+      var s = doc.createElement('style');
+      s.id = '_lang_sel_fix';
+      s.textContent =
+        'html body [data-st-key="top_ctrl_row"] [data-baseweb="select"],' +
+        'html body [data-st-key="top_ctrl_row"] [data-baseweb="select"] * {' +
+        '  background: transparent !important;' +
+        '  background-color: transparent !important;' +
+        '  border: none !important;' +
+        '  box-shadow: none !important;' +
+        '  outline: none !important;' +
+        '}';
+      doc.head.appendChild(s);
       return true;
-    } catch(e){ return false; }
+    } catch(e) { return false; }
   }
-  var n=0, t=setInterval(function(){ if(fix()||++n>25) clearInterval(t); },80);
+  var n=0, t=setInterval(function(){ if(inject()||++n>30) clearInterval(t); },80);
 })();
 </script>""", height=0, scrolling=False)
 
