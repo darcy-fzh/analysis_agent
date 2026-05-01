@@ -427,32 +427,6 @@ h3 {
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(0,0,0,0.05) !important;
 }
-/* Language selectbox — no border, no background (higher specificity to beat global rules) */
-[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"],
-[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"] > div,
-[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"] input {
-    padding: 0 6px !important;
-    height: 26px !important;
-    min-height: 0 !important;
-    border-radius: 12px !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    line-height: 26px !important;
-    cursor: pointer !important;
-}
-[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"]:hover > div,
-[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"] > div:hover {
-    background: rgba(0,0,0,0.05) !important;
-}
-/* Selectbox dropdown arrow — subtle */
-[data-st-key="lang_select"] [data-testid="stSelectbox"] svg {
-    opacity: 0.4 !important;
-    width: 12px !important;
-    height: 12px !important;
-}
 /* Top controls — remove column gaps for compact side-by-side layout */
 [data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"] {
     gap: 2px !important;
@@ -1045,19 +1019,6 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(255,255,255,0.08) !important;
 }
-/* Language selectbox — keep transparent even in dark mode */
-[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"],
-[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"] > div,
-[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"] input {
-    background: transparent !important;
-    border: none !important;
-    border-color: transparent !important;
-}
-[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"]:hover > div,
-[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"] > div:hover {
-    background: rgba(255,255,255,0.08) !important;
-}
-
 /* ── Color pickers ────────────────────────────────────────────── */
 [data-testid="stColorPicker"] label { color: #e4e4e5 !important; }
 
@@ -1068,10 +1029,7 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
     # ── Top-right controls ─────────────────────────────────────────
     _c_ctrl = "rgba(0,0,0,0.45)" if not is_dark else "rgba(228,228,229,0.55)"
     st.markdown(f"""<style>
-[data-st-key="theme_btn"] button,
-[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"],
-[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"] > div,
-[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"] input {{ color: {_c_ctrl} !important; }}
+[data-st-key="theme_btn"] button {{ color: {_c_ctrl} !important; }}
 </style>""", unsafe_allow_html=True)
 
     with st.container(key="top_ctrl_row"):
@@ -1093,6 +1051,38 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
             if new_lang != cur_lang:
                 st.session_state.lang = new_lang
                 st.rerun()
+
+    # ── Language selectbox CSS — injected late to win cascade ─────
+    # Must be a separate <style> block rendered AFTER all other CSS
+    # so it overrides both CUSTOM_CSS global selectbox rules and dark mode.
+    _hover_bg = "rgba(255,255,255,0.08)" if is_dark else "rgba(0,0,0,0.05)"
+    st.markdown(f"""<style>
+    [data-st-key="lang_select"] [data-baseweb="select"],
+    [data-st-key="lang_select"] [data-baseweb="select"] > div {{
+        padding: 0 6px !important;
+        height: 26px !important;
+        min-height: 0 !important;
+        border-radius: 12px !important;
+        background: transparent !important;
+        border: 0 none transparent !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        line-height: 26px !important;
+        cursor: pointer !important;
+        color: {_c_ctrl} !important;
+    }}
+    [data-st-key="lang_select"] [data-baseweb="select"]:hover > div,
+    [data-st-key="lang_select"] [data-baseweb="select"] > div:hover {{
+        background: {_hover_bg} !important;
+    }}
+    [data-st-key="lang_select"] svg {{
+        opacity: 0.4 !important;
+        width: 12px !important;
+        height: 12px !important;
+    }}
+    </style>""", unsafe_allow_html=True)
 
     st.title(t("title"))
     st.caption(t("caption"))
