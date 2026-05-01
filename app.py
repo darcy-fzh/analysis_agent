@@ -427,10 +427,10 @@ h3 {
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(0,0,0,0.05) !important;
 }
-/* Language selectbox — no border, no background */
-[data-st-key="lang_select"] [data-baseweb="select"],
-[data-st-key="lang_select"] [data-baseweb="select"] > div,
-[data-st-key="lang_select"] [data-baseweb="select"] input {
+/* Language selectbox — no border, no background (higher specificity to beat global rules) */
+[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"],
+[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"] > div,
+[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"] input {
     padding: 0 6px !important;
     height: 26px !important;
     min-height: 0 !important;
@@ -443,12 +443,12 @@ h3 {
     line-height: 26px !important;
     cursor: pointer !important;
 }
-[data-st-key="lang_select"] [data-baseweb="select"]:hover > div,
-[data-st-key="lang_select"] [data-baseweb="select"] > div:hover {
+[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"]:hover > div,
+[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"] > div:hover {
     background: rgba(0,0,0,0.05) !important;
 }
 /* Selectbox dropdown arrow — subtle */
-[data-st-key="lang_select"] svg {
+[data-st-key="lang_select"] [data-testid="stSelectbox"] svg {
     opacity: 0.4 !important;
     width: 12px !important;
     height: 12px !important;
@@ -1046,15 +1046,15 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
     background: rgba(255,255,255,0.08) !important;
 }
 /* Language selectbox — keep transparent even in dark mode */
-[data-st-key="lang_select"] [data-baseweb="select"],
-[data-st-key="lang_select"] [data-baseweb="select"] > div,
-[data-st-key="lang_select"] [data-baseweb="select"] input {
+[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"],
+[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"] > div,
+[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"] input {
     background: transparent !important;
     border: none !important;
     border-color: transparent !important;
 }
-[data-st-key="lang_select"] [data-baseweb="select"]:hover > div,
-[data-st-key="lang_select"] [data-baseweb="select"] > div:hover {
+[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"]:hover > div,
+[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"] > div:hover {
     background: rgba(255,255,255,0.08) !important;
 }
 
@@ -1069,9 +1069,9 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
     _c_ctrl = "rgba(0,0,0,0.45)" if not is_dark else "rgba(228,228,229,0.55)"
     st.markdown(f"""<style>
 [data-st-key="theme_btn"] button,
-[data-st-key="lang_select"] [data-baseweb="select"],
-[data-st-key="lang_select"] [data-baseweb="select"] > div,
-[data-st-key="lang_select"] [data-baseweb="select"] input {{ color: {_c_ctrl} !important; }}
+[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"],
+[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"] > div,
+[data-st-key="lang_select"] [data-testid="stSelectbox"] [data-baseweb="select"] input {{ color: {_c_ctrl} !important; }}
 </style>""", unsafe_allow_html=True)
 
     with st.container(key="top_ctrl_row"):
