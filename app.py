@@ -210,10 +210,16 @@ code, pre, [data-testid="stCodeBlock"] code {
     border-radius: 12px !important;
 }
 
-/* ── Inputs & selects — pill-like, soft focus ──────────────────── */
+/* ── Inputs — pill-like, soft focus ────────────────────────────── */
 [data-testid="stTextInput"] input,
-[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
 textarea {
+    border-radius: 12px !important;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease !important;
+}
+/* Selectboxes — same pill style but lower specificity so overrides work */
+[data-testid="stSelectbox"] [data-baseweb="select"] > div {
     border-radius: 12px !important;
     border: 1px solid rgba(0,0,0,0.08) !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
