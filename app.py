@@ -427,10 +427,32 @@ h3 {
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(0,0,0,0.05) !important;
 }
-/* Collapse gap between theme icon and lang button */
+/* Collapse icon + lang columns to content width, push to far right.
+   Streamlit sets flex via inline style (flex: N 1 0%) — !important on
+   individual longhands overrides the shorthand's components. */
 [data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"] {
-    gap: 0 !important;
-    column-gap: 0 !important;
+    gap: 2px !important;
+}
+/* Spacer: grab all remaining space */
+[data-st-key="top_ctrl_row"] [data-testid="column"]:first-child {
+    flex-grow: 1 !important;
+    flex-shrink: 1 !important;
+}
+/* Icon column: shrink to content */
+[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(2) {
+    flex-grow: 0 !important;
+    flex-shrink: 0 !important;
+    flex-basis: auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+}
+/* Lang column: shrink to content */
+[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(3) {
+    flex-grow: 0 !important;
+    flex-shrink: 0 !important;
+    flex-basis: auto !important;
+    width: auto !important;
+    min-width: 0 !important;
 }
 
 </style>
