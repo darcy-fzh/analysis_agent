@@ -7,7 +7,6 @@ import sys
 import pandas as pd
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 from src.cache import QueryCache
 from src.database import DatabaseManager
@@ -406,53 +405,27 @@ h3 {
     background: transparent !important;
 }
 
-/* ── Hide zero-height JS-fix component inside top control row ───── */
-[data-st-key="top_ctrl_row"] iframe,
-[data-st-key="top_ctrl_row"] [data-testid="stCustomComponentV1"] {
-    display: none !important;
-    height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* ── Top-right header controls — theme icon + lang selectbox ────── */
+/* ── Top-right header controls — theme icon + lang toggle button ── */
 [data-st-key="top_ctrl_row"] {
     margin-bottom: -4px !important;
 }
-/* Theme button: compact, transparent, no border */
 [data-st-key="top_ctrl_row"] button {
-    padding: 2px 6px !important;
+    padding: 2px 8px !important;
     height: 26px !important;
     min-height: 0 !important;
     border-radius: 6px !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    font-size: 16px !important;
-    font-weight: 500 !important;
-    line-height: 1 !important;
-    transition: background 0.12s ease, color 0.12s ease !important;
-}
-[data-st-key="top_ctrl_row"] button:hover {
-    background: rgba(0,0,0,0.05) !important;
-}
-/* Language selectbox — transparent, flat. Target all descendants. */
-html body [data-st-key="top_ctrl_row"] [data-baseweb="select"],
-html body [data-st-key="top_ctrl_row"] [data-baseweb="select"] * {
-    background: transparent !important;
-    background-color: transparent !important;
-    border: none !important;
-    border-color: transparent !important;
-    box-shadow: none !important;
-    outline: none !important;
-}
-html body [data-st-key="top_ctrl_row"] [data-baseweb="select"] span {
     font-size: 13px !important;
     font-weight: 500 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    transition: background 0.12s ease, color 0.12s ease !important;
 }
-html body [data-st-key="top_ctrl_row"] [data-baseweb="select"] svg {
-    width: 14px !important;
-    height: 14px !important;
+[data-st-key="theme_btn"] button { font-size: 16px !important; }
+[data-st-key="top_ctrl_row"] button:hover {
+    background: rgba(0,0,0,0.05) !important;
 }
 
 </style>
@@ -1045,15 +1018,10 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
         </style>""", unsafe_allow_html=True)
 
     # ── Top-right controls ─────────────────────────────────────────
-    _c_icon = "rgba(0,0,0,0.45)"  if not is_dark else "rgba(228,228,229,0.50)"
-    _c_sel  = "rgba(0,0,0,0.65)"  if not is_dark else "rgba(228,228,229,0.75)"
+    _c_ctrl = "rgba(0,0,0,0.45)" if not is_dark else "rgba(228,228,229,0.55)"
     st.markdown(f"""<style>
-[data-st-key="theme_btn"] button {{ color: {_c_icon} !important; }}
-[data-st-key="top_ctrl_row"] [data-baseweb="select"] [data-testid="stSelectboxInputContainer"] span,
-[data-st-key="top_ctrl_row"] [data-baseweb="select"] div[role="combobox"] span {{
-    color: {_c_sel} !important;
-}}
-[data-st-key="top_ctrl_row"] [data-baseweb="select"] svg {{ fill: {_c_icon} !important; }}
+[data-st-key="theme_btn"] button,
+[data-st-key="lang_btn"] button {{ color: {_c_ctrl} !important; }}
 </style>""", unsafe_allow_html=True)
 
     with st.container(key="top_ctrl_row"):
@@ -1066,47 +1034,10 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
                     st.session_state.theme = "light" if is_dark else "dark"
                     st.rerun()
             with c_lang:
-                chosen = st.selectbox(
-                    "lang",
-                    ["English", "中文"],
-                    index=1 if cur_lang == "zh" else 0,
-                    key="lang_sel",
-                    label_visibility="collapsed",
-                )
-                new_lang = "zh" if chosen == "中文" else "en"
-                if new_lang != cur_lang:
-                    st.session_state.lang = new_lang
+                lang_label = "English ▾" if cur_lang == "en" else "中文 ▾"
+                if st.button(lang_label, key="lang_btn", type="tertiary", use_container_width=True):
+                    st.session_state.lang = "zh" if cur_lang == "en" else "en"
                     st.rerun()
-
-    # JS: inject a persistent <style> into window.parent.document.head.
-    # This survives React re-renders (unlike inline style patching) because
-    # the injected <style> tag lives in <head>, not on individual DOM nodes.
-    # Same-origin iframe access is allowed since components are served from
-    # the same Streamlit server.
-    components.html("""<script>
-(function(){
-  function inject(){
-    try {
-      var doc = window.parent.document;
-      if (doc.getElementById('_lang_sel_fix')) return true;
-      var s = doc.createElement('style');
-      s.id = '_lang_sel_fix';
-      s.textContent =
-        'html body [data-st-key="top_ctrl_row"] [data-baseweb="select"],' +
-        'html body [data-st-key="top_ctrl_row"] [data-baseweb="select"] * {' +
-        '  background: transparent !important;' +
-        '  background-color: transparent !important;' +
-        '  border: none !important;' +
-        '  box-shadow: none !important;' +
-        '  outline: none !important;' +
-        '}';
-      doc.head.appendChild(s);
-      return true;
-    } catch(e) { return false; }
-  }
-  var n=0, t=setInterval(function(){ if(inject()||++n>30) clearInterval(t); },80);
-})();
-</script>""", height=0, scrolling=False)
 
     st.title(t("title"))
     st.caption(t("caption"))
