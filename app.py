@@ -405,12 +405,13 @@ h3 {
     background: transparent !important;
 }
 
-/* ── Top-right header controls — theme icon + lang toggle button ── */
+/* ── Top-right header controls ─────────────────────────────────── */
 [data-st-key="top_ctrl_row"] {
     margin-bottom: -4px !important;
 }
+/* Both buttons: compact, transparent */
 [data-st-key="top_ctrl_row"] button {
-    padding: 2px 8px !important;
+    padding: 2px 6px !important;
     height: 26px !important;
     min-height: 0 !important;
     border-radius: 6px !important;
@@ -421,36 +422,24 @@ h3 {
     font-weight: 500 !important;
     line-height: 1 !important;
     white-space: nowrap !important;
-    transition: background 0.12s ease, color 0.12s ease !important;
 }
 [data-st-key="theme_btn"] button { font-size: 16px !important; }
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(0,0,0,0.05) !important;
 }
-/* Collapse icon + lang columns to content width, push to far right.
-   Streamlit sets flex via inline style (flex: N 1 0%) — !important on
-   individual longhands overrides the shorthand's components. */
-[data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"] {
+/* Both buttons live in ONE column — turn its vertical stack into a flex row.
+   This avoids any inter-column gap that Streamlit injects between columns. */
+[data-st-key="top_ctrl_row"] [data-testid="column"]:last-child {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
     gap: 2px !important;
+    flex-wrap: nowrap !important;
+    padding: 0 !important;
 }
-/* Spacer: grab all remaining space */
-[data-st-key="top_ctrl_row"] [data-testid="column"]:first-child {
-    flex-grow: 1 !important;
-    flex-shrink: 1 !important;
-}
-/* Icon column: shrink to content */
-[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(2) {
-    flex-grow: 0 !important;
-    flex-shrink: 0 !important;
-    flex-basis: auto !important;
-    width: auto !important;
-    min-width: 0 !important;
-}
-/* Lang column: shrink to content */
-[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(3) {
-    flex-grow: 0 !important;
-    flex-shrink: 0 !important;
-    flex-basis: auto !important;
+[data-st-key="top_ctrl_row"] [data-testid="column"]:last-child > div,
+[data-st-key="top_ctrl_row"] [data-testid="column"]:last-child > div > div {
+    flex: 0 0 auto !important;
     width: auto !important;
     min-width: 0 !important;
 }
@@ -1052,15 +1041,16 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
 </style>""", unsafe_allow_html=True)
 
     with st.container(key="top_ctrl_row"):
-        _, c_icon, c_lang = st.columns([5, 0.4, 1])
-        with c_icon:
+        _, ctrl_col = st.columns([6, 1])
+        with ctrl_col:
+            # Both buttons in the same column; CSS turns the vertical
+            # stack into a horizontal flex row — no inter-column gap.
             icon = "◑" if is_dark else "◐"
-            if st.button(icon, key="theme_btn", type="tertiary", use_container_width=True):
+            if st.button(icon, key="theme_btn", type="tertiary"):
                 st.session_state.theme = "light" if is_dark else "dark"
                 st.rerun()
-        with c_lang:
             lang_label = "English ▾" if cur_lang == "en" else "中文 ▾"
-            if st.button(lang_label, key="lang_btn", type="tertiary", use_container_width=True):
+            if st.button(lang_label, key="lang_btn", type="tertiary"):
                 st.session_state.lang = "zh" if cur_lang == "en" else "en"
                 st.rerun()
 
