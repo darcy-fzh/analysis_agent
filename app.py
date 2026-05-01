@@ -260,7 +260,7 @@ button[kind]:active {
 [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="input"] {
     border: none !important;
     box-shadow: none !important;
-    background: #e8e8ed !important;
+    background: #ffffff !important;
     border-radius: 12px !important;
 }
 [data-testid="stSidebar"] [data-testid="stTextInput"] input {
@@ -426,23 +426,26 @@ h3 {
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(0,0,0,0.05) !important;
 }
-/* Language selectbox — no border, no background, compact */
-[data-st-key="top_ctrl_row"] [data-baseweb="select"] > div,
-[data-st-key="top_ctrl_row"] [data-baseweb="select"] > div:hover,
-[data-st-key="top_ctrl_row"] [data-baseweb="select"] > div:focus-within,
-[data-st-key="top_ctrl_row"] [data-baseweb="select"] > div[aria-expanded="true"] {
+/* Language selectbox — no border, no background, compact
+   Use [data-testid="stSelectbox"] to beat specificity of the global rule */
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within,
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div[aria-expanded="true"] {
     border: none !important;
     border-color: transparent !important;
     box-shadow: none !important;
     background: transparent !important;
     background-color: transparent !important;
     min-height: 28px !important;
+    outline: none !important;
 }
-[data-st-key="top_ctrl_row"] [data-baseweb="select"] * {
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div * {
     border: none !important;
     box-shadow: none !important;
+    outline: none !important;
 }
-[data-st-key="top_ctrl_row"] [data-baseweb="select"] span {
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] span {
     font-size: 13px !important;
     font-weight: 500 !important;
 }
