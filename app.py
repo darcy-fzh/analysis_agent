@@ -1046,49 +1046,18 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
                 st.session_state.theme = "light" if is_dark else "dark"
                 st.rerun()
         with c_lang:
-            lang_selected = st.selectbox(
-                "Language",
-                ["English", "中文"],
-                index=0 if cur_lang == "en" else 1,
-                key="lang_select",
-                label_visibility="collapsed",
-            )
-            new_lang = "en" if lang_selected == "English" else "zh"
-            if new_lang != cur_lang:
-                st.session_state.lang = new_lang
-                st.rerun()
-
-    # ── Language selectbox CSS — injected late to win cascade ─────
-    # Must be a separate <style> block rendered AFTER all other CSS
-    # so it overrides both CUSTOM_CSS global selectbox rules and dark mode.
-    _hover_bg = "rgba(255,255,255,0.08)" if is_dark else "rgba(0,0,0,0.05)"
-    st.markdown(f"""<style>
-    [data-st-key="lang_select"] [data-baseweb="select"],
-    [data-st-key="lang_select"] [data-baseweb="select"] > div {{
-        padding: 0 6px !important;
-        height: 26px !important;
-        min-height: 0 !important;
-        border-radius: 12px !important;
-        background: transparent !important;
-        border: 0 none transparent !important;
-        border-color: transparent !important;
-        box-shadow: none !important;
-        font-size: 13px !important;
-        font-weight: 500 !important;
-        line-height: 26px !important;
-        cursor: pointer !important;
-        color: {_c_ctrl} !important;
-    }}
-    [data-st-key="lang_select"] [data-baseweb="select"]:hover > div,
-    [data-st-key="lang_select"] [data-baseweb="select"] > div:hover {{
-        background: {_hover_bg} !important;
-    }}
-    [data-st-key="lang_select"] svg {{
-        opacity: 0.4 !important;
-        width: 12px !important;
-        height: 12px !important;
-    }}
-    </style>""", unsafe_allow_html=True)
+            _cur_label = ("English ▾" if cur_lang == "en" else "中文 ▾")
+            with st.popover(_cur_label, use_container_width=False, key="lang_pop"):
+                if st.button("English", key="pop_en", use_container_width=True,
+                            type="primary" if cur_lang == "en" else "tertiary"):
+                    if cur_lang != "en":
+                        st.session_state.lang = "en"
+                        st.rerun()
+                if st.button("中文", key="pop_zh", use_container_width=True,
+                            type="primary" if cur_lang == "zh" else "tertiary"):
+                    if cur_lang != "zh":
+                        st.session_state.lang = "zh"
+                        st.rerun()
 
     st.title(t("title"))
     st.caption(t("caption"))
