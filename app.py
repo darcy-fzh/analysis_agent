@@ -260,7 +260,7 @@ button[kind]:active {
 [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="input"] {
     border: none !important;
     box-shadow: none !important;
-    background: #ffffff !important;
+    background: #f0f0f2 !important;
     border-radius: 12px !important;
 }
 [data-testid="stSidebar"] [data-testid="stTextInput"] input {
