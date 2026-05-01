@@ -653,21 +653,6 @@ def _execute_question(
 
 def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
     with st.sidebar:
-        # Language toggle
-        lang = st.selectbox(
-            t("language"),
-            ["English", "中文"],
-            index=0 if st.session_state.get("lang", "en") == "en" else 1,
-            key="lang_selector",
-            label_visibility="collapsed",
-        )
-        if lang == "中文":
-            st.session_state.lang = "zh"
-        else:
-            st.session_state.lang = "en"
-
-        st.divider()
-
         st.header(t("status"))
 
         if db.test_connection():
@@ -804,6 +789,51 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
 
 
 def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None:
+    # ── Top header bar — language & theme toggles ─────────────────
+    _, h_right = st.columns([5, 1])
+    with h_right:
+        tc1, tc2 = st.columns([1, 1])
+        with tc1:
+            is_dark = st.session_state.get("theme", "light") == "dark"
+            icon = "☀️" if is_dark else "🌙"
+            if st.button(icon, key="theme_toggle", help="Toggle dark/light mode", type="tertiary"):
+                st.session_state.theme = "light" if is_dark else "dark"
+                st.rerun()
+        with tc2:
+            cur = st.session_state.get("lang", "en")
+            label = "EN" if cur == "zh" else "中文"
+            if st.button(label, key="lang_toggle", help="Switch language", type="tertiary"):
+                st.session_state.lang = "zh" if cur == "en" else "en"
+                st.rerun()
+
+    # ── Dark mode CSS ────────────────────────────────────────────
+    if st.session_state.get("theme", "light") == "dark":
+        st.markdown("""<style>
+        :root { --dark-bg: #1a1a1b; --dark-text: #e4e4e5; }
+        [data-testid="stApp"] { background: #1a1a1b; }
+        h1, h3, p, span, label, [data-testid="stCaption"] {
+            color: #e4e4e5 !important;
+        }
+        [data-testid="stSidebar"] {
+            background: rgba(28,28,30,0.92) !important;
+            border-right: 1px solid rgba(255,255,255,0.06) !important;
+        }
+        [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="input"] {
+            background: rgba(255,255,255,0.06) !important;
+        }
+        [data-testid="stChatInput"] textarea {
+            color: #e4e4e5 !important;
+        }
+        [data-st-key="stop_bar"],
+        [data-testid="stMain"] [data-testid="stHorizontalBlock"]:has([data-testid="baseButton-tertiary"]) {
+            background: rgba(44,44,46,0.85) !important;
+        }
+        [data-testid="stExpander"] {
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2) !important;
+        }
+        [data-testid="stMetric"] { background: rgba(255,255,255,0.04) !important; }
+        </style>""", unsafe_allow_html=True)
+
     st.title(t("title"))
     st.caption(t("caption"))
 
