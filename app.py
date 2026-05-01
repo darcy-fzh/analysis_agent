@@ -427,21 +427,15 @@ h3 {
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(0,0,0,0.05) !important;
 }
-/* Both buttons live in ONE column — turn its vertical stack into a flex row.
-   This avoids any inter-column gap that Streamlit injects between columns. */
-[data-st-key="top_ctrl_row"] [data-testid="column"]:last-child {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
+/* Top controls — remove column gaps for compact side-by-side layout */
+[data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"] {
     gap: 2px !important;
-    flex-wrap: nowrap !important;
-    padding: 0 !important;
 }
-[data-st-key="top_ctrl_row"] [data-testid="column"]:last-child > div,
-[data-st-key="top_ctrl_row"] [data-testid="column"]:last-child > div > div {
+/* Right-side columns shrink to content width */
+[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(2),
+[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(3) {
     flex: 0 0 auto !important;
     width: auto !important;
-    min-width: 0 !important;
 }
 
 </style>
@@ -1041,14 +1035,13 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
 </style>""", unsafe_allow_html=True)
 
     with st.container(key="top_ctrl_row"):
-        _, ctrl_col = st.columns([6, 1])
-        with ctrl_col:
-            # Both buttons in the same column; CSS turns the vertical
-            # stack into a horizontal flex row — no inter-column gap.
+        _, c_theme, c_lang = st.columns([6, 0.3, 0.7])
+        with c_theme:
             icon = "◑" if is_dark else "◐"
             if st.button(icon, key="theme_btn", type="tertiary"):
                 st.session_state.theme = "light" if is_dark else "dark"
                 st.rerun()
+        with c_lang:
             lang_label = "English ▾" if cur_lang == "en" else "中文 ▾"
             if st.button(lang_label, key="lang_btn", type="tertiary"):
                 st.session_state.lang = "zh" if cur_lang == "en" else "en"
