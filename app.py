@@ -7,6 +7,7 @@ import sys
 import pandas as pd
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from src.cache import QueryCache
 from src.database import DatabaseManager
@@ -403,6 +404,15 @@ h3 {
 }
 [data-st-key="stop_bar"] [data-testid="stHorizontalBlock"] {
     background: transparent !important;
+}
+
+/* ── Hide zero-height JS-fix component inside top control row ───── */
+[data-st-key="top_ctrl_row"] iframe,
+[data-st-key="top_ctrl_row"] [data-testid="stCustomComponentV1"] {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* ── Top-right header controls — theme icon + lang selectbox ────── */
@@ -1064,7 +1074,7 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
             with c_lang:
                 chosen = st.selectbox(
                     "lang",
-                    ["EN", "中文"],
+                    ["English", "中文"],
                     index=1 if cur_lang == "zh" else 0,
                     key="lang_sel",
                     label_visibility="collapsed",
@@ -1073,6 +1083,30 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
                 if new_lang != cur_lang:
                     st.session_state.lang = new_lang
                     st.rerun()
+
+    # JS: strip background/border from the language selectbox via inline styles.
+    # CSS alone cannot reliably override BaseWeb's styled-components; injecting
+    # via a same-origin component iframe allows direct DOM manipulation.
+    components.html("""<script>
+(function(){
+  function fix(){
+    try{
+      var d=window.parent.document;
+      var row=d.querySelector('[data-st-key="top_ctrl_row"]');
+      if(!row) return false;
+      row.querySelectorAll('[data-baseweb="select"] *').forEach(function(el){
+        el.style.setProperty('background','transparent','important');
+        el.style.setProperty('background-color','transparent','important');
+        el.style.setProperty('border','none','important');
+        el.style.setProperty('box-shadow','none','important');
+        el.style.setProperty('outline','none','important');
+      });
+      return true;
+    } catch(e){ return false; }
+  }
+  var n=0, t=setInterval(function(){ if(fix()||++n>25) clearInterval(t); },80);
+})();
+</script>""", height=0, scrolling=False)
 
     st.title(t("title"))
     st.caption(t("caption"))
