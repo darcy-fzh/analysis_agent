@@ -433,6 +433,14 @@ h3 {
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(0,0,0,0.05) !important;
 }
+/* Active lang button keeps primary blue fill */
+[data-st-key="top_ctrl_row"] button[kind="primary"] {
+    background: #007AFF !important;
+    color: #fff !important;
+}
+[data-st-key="top_ctrl_row"] button[kind="primary"]:hover {
+    background: #0062cc !important;
+}
 /* Top controls — remove column gaps for compact side-by-side layout */
 [data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"] {
     gap: 2px !important;
@@ -1025,6 +1033,13 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(255,255,255,0.08) !important;
 }
+[data-st-key="top_ctrl_row"] button[kind="primary"] {
+    background: #0A84FF !important;
+    color: #fff !important;
+}
+[data-st-key="top_ctrl_row"] button[kind="primary"]:hover {
+    background: #409CFF !important;
+}
 /* ── Color pickers ────────────────────────────────────────────── */
 [data-testid="stColorPicker"] label { color: #e4e4e5 !important; }
 
@@ -1046,15 +1061,18 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
                 st.session_state.theme = "light" if is_dark else "dark"
                 st.rerun()
         with c_lang:
-            _cur_label = ("English ▾" if cur_lang == "en" else "中文 ▾")
-            with st.popover(_cur_label, use_container_width=False, key="lang_pop"):
-                if st.button("English", key="pop_en", use_container_width=True,
-                            type="primary" if cur_lang == "en" else "tertiary"):
+            lang_col_a, lang_col_b = st.columns(2)
+            with lang_col_a:
+                if st.button("EN", key="lang_en_btn",
+                            type="primary" if cur_lang == "en" else "tertiary",
+                            use_container_width=True):
                     if cur_lang != "en":
                         st.session_state.lang = "en"
                         st.rerun()
-                if st.button("中文", key="pop_zh", use_container_width=True,
-                            type="primary" if cur_lang == "zh" else "tertiary"):
+            with lang_col_b:
+                if st.button("中文", key="lang_zh_btn",
+                            type="primary" if cur_lang == "zh" else "tertiary",
+                            use_container_width=True):
                     if cur_lang != "zh":
                         st.session_state.lang = "zh"
                         st.rerun()
