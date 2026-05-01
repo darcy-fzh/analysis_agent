@@ -427,6 +427,29 @@ h3 {
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(0,0,0,0.05) !important;
 }
+/* Language selectbox — compact, transparent, matches button */
+[data-st-key="lang_select"] [data-baseweb="select"] > div {
+    padding: 0 6px !important;
+    height: 26px !important;
+    min-height: 0 !important;
+    border-radius: 6px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    line-height: 26px !important;
+    cursor: pointer !important;
+}
+[data-st-key="lang_select"] [data-baseweb="select"] > div:hover {
+    background: rgba(0,0,0,0.05) !important;
+}
+/* Selectbox dropdown arrow — subtle */
+[data-st-key="lang_select"] svg {
+    opacity: 0.4 !important;
+    width: 12px !important;
+    height: 12px !important;
+}
 /* Top controls — remove column gaps for compact side-by-side layout */
 [data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"] {
     gap: 2px !important;
@@ -1019,6 +1042,9 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(255,255,255,0.08) !important;
 }
+[data-st-key="lang_select"] [data-baseweb="select"] > div:hover {
+    background: rgba(255,255,255,0.08) !important;
+}
 
 /* ── Color pickers ────────────────────────────────────────────── */
 [data-testid="stColorPicker"] label { color: #e4e4e5 !important; }
@@ -1031,7 +1057,7 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
     _c_ctrl = "rgba(0,0,0,0.45)" if not is_dark else "rgba(228,228,229,0.55)"
     st.markdown(f"""<style>
 [data-st-key="theme_btn"] button,
-[data-st-key="lang_btn"] button {{ color: {_c_ctrl} !important; }}
+[data-st-key="lang_select"] [data-baseweb="select"] > div {{ color: {_c_ctrl} !important; }}
 </style>""", unsafe_allow_html=True)
 
     with st.container(key="top_ctrl_row"):
@@ -1042,9 +1068,16 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
                 st.session_state.theme = "light" if is_dark else "dark"
                 st.rerun()
         with c_lang:
-            lang_label = "English ▾" if cur_lang == "en" else "中文 ▾"
-            if st.button(lang_label, key="lang_btn", type="tertiary"):
-                st.session_state.lang = "zh" if cur_lang == "en" else "en"
+            lang_selected = st.selectbox(
+                "Language",
+                ["English", "中文"],
+                index=0 if cur_lang == "en" else 1,
+                key="lang_select",
+                label_visibility="collapsed",
+            )
+            new_lang = "en" if lang_selected == "English" else "zh"
+            if new_lang != cur_lang:
+                st.session_state.lang = new_lang
                 st.rerun()
 
     st.title(t("title"))
