@@ -1075,7 +1075,6 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
                     index=1 if cur_lang == "zh" else 0,
                     key="lang_sel",
                     label_visibility="collapsed",
-                    use_container_width=True,
                 )
                 target_lang = "zh" if chosen == "中文" else "en"
                 if target_lang != cur_lang:
