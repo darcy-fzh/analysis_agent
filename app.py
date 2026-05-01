@@ -396,13 +396,31 @@ h3 {
     background: transparent !important;
 }
 
-/* ── Hidden state-management buttons — off-screen ─────────────── */
-[data-st-key="theme_toggle_btn"],
-[data-st-key="lang_toggle_btn"] {
-    position: absolute !important;
-    left: -9999px !important;
-    top: -9999px !important;
-    overflow: hidden !important;
+/* ── Top-right header controls — compact, right-aligned ───────── */
+[data-st-key="top_ctrl_row"] {
+    margin-bottom: 0 !important;
+}
+[data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"] {
+    align-items: center !important;
+    gap: 6px !important;
+}
+[data-st-key="top_ctrl_row"] button[data-testid="baseButton-tertiary"] {
+    font-size: 16px !important;
+    padding: 4px 8px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+    color: rgba(0,0,0,0.5) !important;
+    background: transparent !important;
+}
+[data-st-key="top_ctrl_row"] button[data-testid="baseButton-tertiary"]:hover {
+    background: rgba(0,0,0,0.05) !important;
+    color: rgba(0,0,0,0.85) !important;
+}
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    min-height: 32px !important;
+    border: 1px solid rgba(0,0,0,0.08) !important;
 }
 
 </style>
@@ -801,67 +819,6 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     is_dark = st.session_state.get("theme", "light") == "dark"
     cur_lang = st.session_state.get("lang", "en")
 
-    # ── Fixed top-right header overlay — pure HTML (position:fixed works here) ──
-    _MOON = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
-    _SUN  = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'
-    _theme_icon = _SUN if is_dark else _MOON
-    _b_bg     = "rgba(255,255,255,0.10)" if is_dark else "rgba(0,0,0,0.05)"
-    _b_color  = "#e4e4e5"               if is_dark else "rgba(0,0,0,0.65)"
-    _b_border = "rgba(255,255,255,0.10)" if is_dark else "rgba(0,0,0,0.08)"
-    _b_hover  = "rgba(255,255,255,0.17)" if is_dark else "rgba(0,0,0,0.09)"
-    _sel_opt_bg = "#2c2c2e"             if is_dark else "#fff"
-    st.markdown(f"""
-<style>
-#_hdr {{
-    position: fixed; top: 10px; right: 16px; z-index: 999999;
-    display: flex; gap: 6px; align-items: center;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-}}
-#_hdr button, #_hdr select {{
-    background: {_b_bg}; color: {_b_color};
-    border: 1px solid {_b_border}; border-radius: 20px;
-    padding: 0 10px; font-size: 13px; font-weight: 500;
-    cursor: pointer; height: 28px; line-height: 28px;
-    font-family: inherit; outline: none;
-    transition: background 0.15s, color 0.15s;
-    -webkit-appearance: none; appearance: none;
-    display: flex; align-items: center;
-}}
-#_hdr select {{
-    padding-right: 22px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%23999' stroke-width='1.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 7px center;
-    background-color: {_b_bg};
-}}
-#_hdr select option {{ background: {_sel_opt_bg}; }}
-#_hdr button:hover, #_hdr select:hover {{ background: {_b_hover} !important; }}
-</style>
-<div id="_hdr">
-  <button id="_theme_btn" title="Toggle theme" onclick="(function(){{
-    var b=document.querySelector('[data-st-key=theme_toggle_btn] button');
-    if(b){{b.click();}}else{{setTimeout(function(){{var b2=document.querySelector('[data-st-key=theme_toggle_btn] button');if(b2)b2.click();}},120);}}
-  }})()">{ _theme_icon}</button>
-  <select id="_lang_sel" title="Language" onchange="(function(want){{
-    var cur='{cur_lang}';
-    if(want!==cur){{
-      var b=document.querySelector('[data-st-key=lang_toggle_btn] button');
-      if(b){{b.click();}}else{{setTimeout(function(){{var b2=document.querySelector('[data-st-key=lang_toggle_btn] button');if(b2)b2.click();}},120);}}
-    }}
-  }})(this.value)">
-    <option value="en"{'  selected' if cur_lang=='en' else ''}>EN</option>
-    <option value="zh"{'  selected' if cur_lang=='zh' else ''}>中文</option>
-  </select>
-</div>
-""", unsafe_allow_html=True)
-
-    # ── Hidden Streamlit buttons — off-screen, JS clicks them ─────
-    if st.button("T", key="theme_toggle_btn", type="tertiary"):
-        st.session_state.theme = "light" if is_dark else "dark"
-        st.rerun()
-    if st.button("L", key="lang_toggle_btn", type="tertiary"):
-        st.session_state.lang = "zh" if cur_lang == "en" else "en"
-        st.rerun()
-
     # ── Dark mode CSS ────────────────────────────────────────────
     if is_dark:
         st.markdown("""<style>
@@ -1040,12 +997,50 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
     box-shadow: 0 2px 12px rgba(0,0,0,0.4) !important;
 }
 
+/* ── Top controls dark variant ────────────────────────────────── */
+[data-st-key="top_ctrl_row"] button[data-testid="baseButton-tertiary"] {
+    color: rgba(228,228,229,0.6) !important;
+}
+[data-st-key="top_ctrl_row"] button[data-testid="baseButton-tertiary"]:hover {
+    background: rgba(255,255,255,0.08) !important;
+    color: #e4e4e5 !important;
+}
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+    background: rgba(44,44,46,0.9) !important;
+    border-color: rgba(255,255,255,0.08) !important;
+    color: #e4e4e5 !important;
+}
+
 /* ── Color pickers ────────────────────────────────────────────── */
 [data-testid="stColorPicker"] label { color: #e4e4e5 !important; }
 
 /* ── Plotly transparent bg ────────────────────────────────────── */
 .js-plotly-plot .plotly .main-svg { background: transparent !important; }
         </style>""", unsafe_allow_html=True)
+
+    # ── Top-right controls — native Streamlit (always reliable) ────
+    with st.container(key="top_ctrl_row"):
+        _, h_right = st.columns([5, 2])
+        with h_right:
+            c1, c2 = st.columns([1, 2])
+            with c1:
+                # ◑ = dark mode on  ◐ = light mode (click to go dark)
+                icon = "◑" if is_dark else "◐"
+                if st.button(icon, key="theme_btn", type="tertiary", use_container_width=True):
+                    st.session_state.theme = "light" if is_dark else "dark"
+                    st.rerun()
+            with c2:
+                chosen = st.selectbox(
+                    "lang",
+                    options=["EN", "中文"],
+                    index=1 if cur_lang == "zh" else 0,
+                    key="lang_sel",
+                    label_visibility="collapsed",
+                )
+                target_lang = "zh" if chosen == "中文" else "en"
+                if target_lang != cur_lang:
+                    st.session_state.lang = target_lang
+                    st.rerun()
 
     st.title(t("title"))
     st.caption(t("caption"))
