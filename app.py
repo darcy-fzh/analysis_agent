@@ -201,13 +201,13 @@ code, pre, [data-testid="stCodeBlock"] code {
 
 /* ── Cards & containers — soft shadow, generous radius ─────────── */
 [data-testid="stExpander"] {
-    border-radius: 14px !important;
+    border-radius: 12px !important;
     border: none !important;
     box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04) !important;
     margin-bottom: 12px !important;
 }
 [data-testid="stExpander"] > div:first-child {
-    border-radius: 14px !important;
+    border-radius: 12px !important;
 }
 
 /* ── Inputs & selects — pill-like, soft focus ──────────────────── */
@@ -270,7 +270,7 @@ button[kind]:active {
 }
 [data-testid="stSidebar"] button[kind] {
     padding: 6px 10px !important;
-    border-radius: 10px !important;
+    border-radius: 12px !important;
     font-size: 13px !important;
     font-weight: 450 !important;
     transition: background 0.1s ease !important;
@@ -320,7 +320,7 @@ button[kind]:active {
 /* ── Metric cards — clean ──────────────────────────────────────── */
 [data-testid="stMetric"] {
     background: rgba(0,0,0,0.02) !important;
-    border-radius: 14px !important;
+    border-radius: 12px !important;
     padding: 12px 16px !important;
 }
 
@@ -396,7 +396,7 @@ h3 {
     backdrop-filter: blur(12px) saturate(160%) !important;
     -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
     border: none !important;
-    border-radius: 16px !important;
+    border-radius: 12px !important;
     padding: 6px 0 !important;
     margin: 8px 0 !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(0,0,0,0.06) !important;
@@ -414,7 +414,7 @@ h3 {
     padding: 2px 6px !important;
     height: 26px !important;
     min-height: 0 !important;
-    border-radius: 6px !important;
+    border-radius: 12px !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
@@ -432,7 +432,7 @@ h3 {
     padding: 0 6px !important;
     height: 26px !important;
     min-height: 0 !important;
-    border-radius: 6px !important;
+    border-radius: 12px !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
@@ -497,7 +497,7 @@ def _render_user(text: str) -> None:
     escaped = html.escape(text)
     st.markdown(
         f'<div style="display:flex;justify-content:flex-end;margin:8px 0;">'
-        f'<div style="background:#007AFF;color:#fff;border-radius:8px;'
+        f'<div style="background:#007AFF;color:#fff;border-radius:12px;'
         f'padding:10px 16px;max-width:75%;width:fit-content;text-align:left;'
         f'font-size:15px;font-weight:450;line-height:1.4;'
         f'box-shadow:0 1px 3px rgba(0,122,255,0.2);">'
