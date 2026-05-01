@@ -396,6 +396,49 @@ h3 {
     background: transparent !important;
 }
 
+/* ── Top-right header controls — fixed, always visible ────────── */
+[data-st-key="header_controls"] {
+    position: fixed !important;
+    top: 10px !important;
+    right: 16px !important;
+    z-index: 9999 !important;
+    width: 140px !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+[data-st-key="header_controls"] > div,
+[data-st-key="header_controls"] [data-testid="stHorizontalBlock"] {
+    gap: 4px !important;
+    flex-wrap: nowrap !important;
+    width: 140px !important;
+    min-width: 0 !important;
+}
+[data-st-key="header_controls"] [data-testid="stHorizontalBlock"] > div {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+}
+[data-st-key="header_controls"] button {
+    padding: 4px 10px !important;
+    border-radius: 20px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    line-height: 1.5 !important;
+    min-height: 0 !important;
+    height: 30px !important;
+    width: 100% !important;
+    background: rgba(0,0,0,0.05) !important;
+    color: rgba(0,0,0,0.65) !important;
+    border: 1px solid rgba(0,0,0,0.07) !important;
+    transition: all 0.15s ease !important;
+    white-space: nowrap !important;
+}
+[data-st-key="header_controls"] button:hover {
+    background: rgba(0,0,0,0.09) !important;
+    color: rgba(0,0,0,0.9) !important;
+}
+
 </style>
 """
 
@@ -789,9 +832,8 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
 
 
 def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None:
-    # ── Top header bar — language & theme toggles ─────────────────
-    _, h_right = st.columns([5, 1])
-    with h_right:
+    # ── Top-right header controls — fixed position via CSS ────────
+    with st.container(key="header_controls"):
         tc1, tc2 = st.columns([1, 1])
         with tc1:
             is_dark = st.session_state.get("theme", "light") == "dark"
@@ -809,29 +851,186 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     # ── Dark mode CSS ────────────────────────────────────────────
     if st.session_state.get("theme", "light") == "dark":
         st.markdown("""<style>
-        :root { --dark-bg: #1a1a1b; --dark-text: #e4e4e5; }
-        [data-testid="stApp"] { background: #1a1a1b; }
-        h1, h3, p, span, label, [data-testid="stCaption"] {
-            color: #e4e4e5 !important;
-        }
-        [data-testid="stSidebar"] {
-            background: rgba(28,28,30,0.92) !important;
-            border-right: 1px solid rgba(255,255,255,0.06) !important;
-        }
-        [data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="input"] {
-            background: rgba(255,255,255,0.06) !important;
-        }
-        [data-testid="stChatInput"] textarea {
-            color: #e4e4e5 !important;
-        }
-        [data-st-key="stop_bar"],
-        [data-testid="stMain"] [data-testid="stHorizontalBlock"]:has([data-testid="baseButton-tertiary"]) {
-            background: rgba(44,44,46,0.85) !important;
-        }
-        [data-testid="stExpander"] {
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2) !important;
-        }
-        [data-testid="stMetric"] { background: rgba(255,255,255,0.04) !important; }
+/* ── Dark mode — comprehensive overrides ─────────────────────── */
+
+/* App header bar (the native Streamlit top bar) */
+header[data-testid="stHeader"],
+.stApp > header {
+    background: #1c1c1e !important;
+    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+}
+
+/* App & main backgrounds */
+[data-testid="stApp"],
+[data-testid="stMain"],
+[data-testid="stMainBlockContainer"],
+.main .block-container {
+    background: #1a1a1b !important;
+    color: #e4e4e5 !important;
+}
+
+/* All text */
+body, p, span, div, li, td, th, strong, em, a,
+[data-testid="stText"],
+[data-testid="stMarkdown"],
+[data-testid="stMarkdown"] p,
+[data-testid="stMarkdown"] li {
+    color: #e4e4e5 !important;
+}
+h1, h2, h3, h4, h5, h6 { color: #f2f2f7 !important; }
+label { color: rgba(228,228,229,0.75) !important; }
+[data-testid="stCaption"],
+[data-testid="stCaption"] p { color: rgba(228,228,229,0.45) !important; }
+
+/* ── Sidebar ──────────────────────────────────────────────────── */
+[data-testid="stSidebar"] {
+    background: rgba(28,28,30,0.98) !important;
+    border-right: 1px solid rgba(255,255,255,0.06) !important;
+}
+[data-testid="stSidebar"] * { color: #e4e4e5 !important; }
+/* Sidebar search box */
+[data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="input"] {
+    background: rgba(255,255,255,0.08) !important;
+    border: none !important;
+}
+[data-testid="stSidebar"] [data-testid="stTextInput"] input {
+    color: #e4e4e5 !important;
+    background: transparent !important;
+}
+/* Sidebar ALL buttons (table list, metrics, history) */
+[data-testid="stSidebar"] button,
+[data-testid="stSidebar"] [data-testid="baseButton-secondary"],
+[data-testid="stSidebar"] [data-testid="baseButton-primary"] {
+    background: rgba(255,255,255,0.06) !important;
+    color: #e4e4e5 !important;
+    border: 1px solid rgba(255,255,255,0.07) !important;
+}
+[data-testid="stSidebar"] button:hover,
+[data-testid="stSidebar"] [data-testid="baseButton-secondary"]:hover {
+    background: rgba(255,255,255,0.11) !important;
+}
+[data-testid="stSidebar"] [data-testid="baseButton-tertiary"] {
+    background: transparent !important;
+    border: none !important;
+}
+/* Dividers */
+hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
+
+/* ── Expanders ────────────────────────────────────────────────── */
+[data-testid="stExpander"] {
+    background: rgba(36,36,38,0.9) !important;
+    border: 1px solid rgba(255,255,255,0.07) !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.35) !important;
+}
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] summary * {
+    color: #e4e4e5 !important;
+    background: transparent !important;
+}
+[data-testid="stExpander"] summary:hover { background: rgba(255,255,255,0.04) !important; }
+[data-testid="stExpander"] > div:last-child { background: transparent !important; }
+
+/* ── Alerts / info / warning / success / error ────────────────── */
+[data-testid="stAlert"],
+[data-testid="stInfo"],
+[data-testid="stWarning"],
+[data-testid="stSuccess"],
+[data-testid="stError"] {
+    background: rgba(44,44,46,0.85) !important;
+    border-color: rgba(255,255,255,0.08) !important;
+}
+[data-testid="stAlert"] *,
+[data-testid="stInfo"] *,
+[data-testid="stWarning"] *,
+[data-testid="stSuccess"] *,
+[data-testid="stError"] * { color: #e4e4e5 !important; }
+
+/* ── Code blocks ──────────────────────────────────────────────── */
+[data-testid="stCodeBlock"],
+[data-testid="stCodeBlock"] pre,
+[data-testid="stCodeBlock"] code {
+    background: rgba(0,0,0,0.45) !important;
+    color: #e4e4e5 !important;
+}
+
+/* ── DataFrames / Tables ──────────────────────────────────────── */
+[data-testid="stDataFrame"] iframe,
+[data-testid="stDataFrame"] > div,
+[data-testid="stTable"] table {
+    background: rgba(28,28,30,0.9) !important;
+}
+[data-testid="stDataFrame"] * { color: #e4e4e5 !important; }
+[data-testid="stTable"] th, [data-testid="stTable"] td { color: #e4e4e5 !important; }
+
+/* ── Selectbox / dropdown ─────────────────────────────────────── */
+[data-testid="stSelectbox"] [data-baseweb="select"] > div {
+    background: rgba(44,44,46,0.9) !important;
+    border-color: rgba(255,255,255,0.08) !important;
+    color: #e4e4e5 !important;
+}
+[data-baseweb="popover"] [data-baseweb="menu"],
+[data-baseweb="popover"] ul {
+    background: #2c2c2e !important;
+    border-color: rgba(255,255,255,0.08) !important;
+}
+[data-baseweb="popover"] li,
+[data-baseweb="menu"] li { color: #e4e4e5 !important; }
+[data-baseweb="menu"] li:hover { background: rgba(255,255,255,0.07) !important; }
+
+/* ── Text inputs ──────────────────────────────────────────────── */
+[data-testid="stTextInput"] input {
+    background: rgba(44,44,46,0.85) !important;
+    color: #e4e4e5 !important;
+    border-color: rgba(255,255,255,0.08) !important;
+}
+
+/* ── Metric cards ─────────────────────────────────────────────── */
+[data-testid="stMetric"] {
+    background: rgba(255,255,255,0.04) !important;
+}
+[data-testid="stMetric"] * { color: #e4e4e5 !important; }
+
+/* ── Chat input ───────────────────────────────────────────────── */
+[data-testid="stBottom"],
+[data-testid="stChatInputContainer"],
+[data-testid="stBottom"] > div {
+    background: #1c1c1e !important;
+    border-top: 1px solid rgba(255,255,255,0.06) !important;
+}
+[data-testid="stChatInput"] > div {
+    background: rgba(44,44,46,0.8) !important;
+    border-color: rgba(255,255,255,0.08) !important;
+}
+[data-testid="stChatInput"] textarea {
+    background: transparent !important;
+    color: #e4e4e5 !important;
+}
+[data-testid="stChatInput"] textarea::placeholder { color: rgba(228,228,229,0.35) !important; }
+
+/* ── Stop bar ─────────────────────────────────────────────────── */
+[data-st-key="stop_bar"],
+[data-testid="stMain"] [data-testid="stHorizontalBlock"]:has([data-testid="baseButton-tertiary"]) {
+    background: rgba(44,44,46,0.92) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4) !important;
+}
+
+/* ── Header controls buttons (dark variant) ───────────────────── */
+[data-st-key="header_controls"] button {
+    background: rgba(255,255,255,0.09) !important;
+    color: rgba(228,228,229,0.85) !important;
+    border-color: rgba(255,255,255,0.09) !important;
+}
+[data-st-key="header_controls"] button:hover {
+    background: rgba(255,255,255,0.15) !important;
+    color: #f2f2f7 !important;
+}
+
+/* ── Color pickers ────────────────────────────────────────────── */
+[data-testid="stColorPicker"] label { color: #e4e4e5 !important; }
+
+/* ── Plotly transparent bg ────────────────────────────────────── */
+.js-plotly-plot .plotly .main-svg { background: transparent !important; }
         </style>""", unsafe_allow_html=True)
 
     st.title(t("title"))
