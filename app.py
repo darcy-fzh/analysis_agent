@@ -427,6 +427,11 @@ h3 {
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(0,0,0,0.05) !important;
 }
+/* Collapse gap between theme icon and lang button */
+[data-st-key="top_ctrl_row"] [data-testid="column"]:last-child [data-testid="stHorizontalBlock"] {
+    gap: 0 !important;
+    column-gap: 0 !important;
+}
 
 </style>
 """
