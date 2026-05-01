@@ -426,12 +426,13 @@ h3 {
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(0,0,0,0.05) !important;
 }
-/* Language selectbox — no border, no background, compact
-   Use [data-testid="stSelectbox"] to beat specificity of the global rule */
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within,
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div[aria-expanded="true"] {
+/* Language selectbox — completely transparent, no border, no background.
+   Use html+body prefix to maximise specificity and beat BaseWeb's own rules. */
+html body [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+html body [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
+html body [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within,
+html body [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div[aria-expanded="true"],
+html body [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div > div {
     border: none !important;
     border-color: transparent !important;
     box-shadow: none !important;
@@ -440,14 +441,14 @@ h3 {
     min-height: 28px !important;
     outline: none !important;
 }
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div * {
-    border: none !important;
-    box-shadow: none !important;
-    outline: none !important;
-}
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] span {
+html body [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] span {
     font-size: 13px !important;
     font-weight: 500 !important;
+}
+html body [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] svg {
+    width: 14px !important;
+    height: 14px !important;
+    margin-left: 1px !important;
 }
 
 </style>
@@ -894,6 +895,9 @@ label { color: rgba(228,228,229,0.75) !important; }
 [data-testid="stSidebar"] [data-testid="stTextInput"] input {
     color: #e4e4e5 !important;
     background: transparent !important;
+}
+[data-testid="stSidebar"] [data-testid="stTextInput"] input::placeholder {
+    color: rgba(228,228,229,0.40) !important;
 }
 /* Sidebar ALL buttons (table list, metrics, history) */
 [data-testid="stSidebar"] button,
