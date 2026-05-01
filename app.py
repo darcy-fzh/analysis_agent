@@ -428,7 +428,7 @@ h3 {
     background: rgba(0,0,0,0.05) !important;
 }
 /* Collapse gap between theme icon and lang button */
-[data-st-key="top_ctrl_row"] [data-testid="column"]:last-child [data-testid="stHorizontalBlock"] {
+[data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"] {
     gap: 0 !important;
     column-gap: 0 !important;
 }
@@ -1030,19 +1030,17 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
 </style>""", unsafe_allow_html=True)
 
     with st.container(key="top_ctrl_row"):
-        _, h_right = st.columns([5, 1])
-        with h_right:
-            c_icon, c_lang = st.columns([1, 2])
-            with c_icon:
-                icon = "◑" if is_dark else "◐"
-                if st.button(icon, key="theme_btn", type="tertiary", use_container_width=True):
-                    st.session_state.theme = "light" if is_dark else "dark"
-                    st.rerun()
-            with c_lang:
-                lang_label = "English ▾" if cur_lang == "en" else "中文 ▾"
-                if st.button(lang_label, key="lang_btn", type="tertiary", use_container_width=True):
-                    st.session_state.lang = "zh" if cur_lang == "en" else "en"
-                    st.rerun()
+        _, c_icon, c_lang = st.columns([5, 0.4, 1])
+        with c_icon:
+            icon = "◑" if is_dark else "◐"
+            if st.button(icon, key="theme_btn", type="tertiary", use_container_width=True):
+                st.session_state.theme = "light" if is_dark else "dark"
+                st.rerun()
+        with c_lang:
+            lang_label = "English ▾" if cur_lang == "en" else "中文 ▾"
+            if st.button(lang_label, key="lang_btn", type="tertiary", use_container_width=True):
+                st.session_state.lang = "zh" if cur_lang == "en" else "en"
+                st.rerun()
 
     st.title(t("title"))
     st.caption(t("caption"))
