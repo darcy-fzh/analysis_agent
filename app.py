@@ -375,9 +375,17 @@ h3 {
     padding: 0 !important;
 }
 
+/* ── Hide native Streamlit header to reclaim top space ─────────── */
+[data-testid="stHeader"] {
+    display: none !important;
+}
+
 /* ── Push content above fixed chat input ───────────────────────── */
-[data-testid="stMain"] .stMainBlockContainer {
-    padding-top: 8px !important;
+[data-testid="stMain"] .stMainBlockContainer,
+[data-testid="stMainBlockContainer"],
+.main .block-container,
+.block-container {
+    padding-top: 4px !important;
     padding-bottom: 90px !important;
 }
 
@@ -397,11 +405,11 @@ h3 {
     background: transparent !important;
 }
 
-/* ── Top-right header controls — theme icon + lang buttons ────── */
+/* ── Top-right header controls — theme icon + lang selectbox ────── */
 [data-st-key="top_ctrl_row"] {
     margin-bottom: -4px !important;
 }
-/* All buttons in the control row: compact, transparent, no border */
+/* Theme button: compact, transparent, no border */
 [data-st-key="top_ctrl_row"] button {
     padding: 2px 6px !important;
     height: 26px !important;
@@ -410,16 +418,33 @@ h3 {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    font-size: 13px !important;
+    font-size: 16px !important;
     font-weight: 500 !important;
     line-height: 1 !important;
     transition: background 0.12s ease, color 0.12s ease !important;
 }
-/* Theme icon slightly larger */
-[data-st-key="theme_btn_col"] button { font-size: 16px !important; }
-/* Hover for all */
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(0,0,0,0.05) !important;
+}
+/* Language selectbox — no border, no background, compact */
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] > div,
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] > div:hover,
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] > div:focus-within,
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] > div[aria-expanded="true"] {
+    border: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    min-height: 28px !important;
+}
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] * {
+    border: none !important;
+    box-shadow: none !important;
+}
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] span {
+    font-size: 13px !important;
+    font-weight: 500 !important;
 }
 
 </style>
@@ -1009,37 +1034,38 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
         </style>""", unsafe_allow_html=True)
 
     # ── Top-right controls ─────────────────────────────────────────
-    # Active lang button = full opacity; inactive = dimmed
-    _c_active   = "rgba(0,0,0,0.80)"  if not is_dark else "rgba(228,228,229,0.85)"
-    _c_inactive = "rgba(0,0,0,0.30)"  if not is_dark else "rgba(228,228,229,0.30)"
+    _c_icon = "rgba(0,0,0,0.45)"  if not is_dark else "rgba(228,228,229,0.50)"
+    _c_sel  = "rgba(0,0,0,0.65)"  if not is_dark else "rgba(228,228,229,0.75)"
     st.markdown(f"""<style>
-[data-st-key="lang_en_btn"] button  {{ color: {"_c_active" if cur_lang=="en" else "_c_inactive"}; }}
-[data-st-key="lang_zh_btn"] button  {{ color: {"_c_active" if cur_lang=="zh" else "_c_inactive"}; }}
-[data-st-key="lang_en_btn"] button  {{ color: {_c_active if cur_lang=="en" else _c_inactive} !important; }}
-[data-st-key="lang_zh_btn"] button  {{ color: {_c_active if cur_lang=="zh" else _c_inactive} !important; }}
-[data-st-key="top_ctrl_row"] button {{ color: {_c_inactive}; }}
-[data-st-key="theme_btn"] button    {{ font-size: 16px !important; color: {_c_inactive} !important; }}
+[data-st-key="theme_btn"] button {{ color: {_c_icon} !important; }}
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] [data-testid="stSelectboxInputContainer"] span,
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] div[role="combobox"] span {{
+    color: {_c_sel} !important;
+}}
+[data-st-key="top_ctrl_row"] [data-baseweb="select"] svg {{ fill: {_c_icon} !important; }}
 </style>""", unsafe_allow_html=True)
 
     with st.container(key="top_ctrl_row"):
-        _, h_right = st.columns([6, 1])
+        _, h_right = st.columns([5, 1])
         with h_right:
-            c_icon, c_en, c_zh = st.columns([1, 1, 1])
+            c_icon, c_lang = st.columns([1, 2])
             with c_icon:
                 icon = "◑" if is_dark else "◐"
                 if st.button(icon, key="theme_btn", type="tertiary", use_container_width=True):
                     st.session_state.theme = "light" if is_dark else "dark"
                     st.rerun()
-            with c_en:
-                if st.button("EN", key="lang_en_btn", type="tertiary", use_container_width=True):
-                    if cur_lang != "en":
-                        st.session_state.lang = "en"
-                        st.rerun()
-            with c_zh:
-                if st.button("中文", key="lang_zh_btn", type="tertiary", use_container_width=True):
-                    if cur_lang != "zh":
-                        st.session_state.lang = "zh"
-                        st.rerun()
+            with c_lang:
+                chosen = st.selectbox(
+                    "lang",
+                    ["EN", "中文"],
+                    index=1 if cur_lang == "zh" else 0,
+                    key="lang_sel",
+                    label_visibility="collapsed",
+                )
+                new_lang = "zh" if chosen == "中文" else "en"
+                if new_lang != cur_lang:
+                    st.session_state.lang = new_lang
+                    st.rerun()
 
     st.title(t("title"))
     st.caption(t("caption"))
