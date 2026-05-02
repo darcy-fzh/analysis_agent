@@ -451,6 +451,19 @@ h3 {
     flex: 0 0 auto !important;
     width: auto !important;
 }
+/* Language buttons side-by-side inside last column */
+[data-st-key="top_ctrl_row"] [data-testid="column"]:last-child [data-testid="stVerticalBlock"],
+[data-st-key="top_ctrl_row"] [data-testid="column"]:last-child [data-testid="stVerticalBlockBorderWrapper"] {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 1px !important;
+}
+[data-st-key="top_ctrl_row"] [data-testid="column"]:last-child [data-testid="stVerticalBlock"] > div,
+[data-st-key="top_ctrl_row"] [data-testid="column"]:last-child [data-testid="stVerticalBlockBorderWrapper"] > div {
+    flex: 0 0 auto !important;
+    width: auto !important;
+}
 
 </style>
 """
@@ -1061,21 +1074,18 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
                 st.session_state.theme = "light" if is_dark else "dark"
                 st.rerun()
         with c_lang:
-            lang_col_a, lang_col_b = st.columns(2)
-            with lang_col_a:
-                if st.button("EN", key="lang_en_btn",
-                            type="primary" if cur_lang == "en" else "tertiary",
-                            use_container_width=True):
-                    if cur_lang != "en":
-                        st.session_state.lang = "en"
-                        st.rerun()
-            with lang_col_b:
-                if st.button("中文", key="lang_zh_btn",
-                            type="primary" if cur_lang == "zh" else "tertiary",
-                            use_container_width=True):
-                    if cur_lang != "zh":
-                        st.session_state.lang = "zh"
-                        st.rerun()
+            _primary = "primary"
+            _tertiary = "tertiary"
+            if st.button("EN", key="lang_en_btn",
+                        type=_primary if cur_lang == "en" else _tertiary):
+                if cur_lang != "en":
+                    st.session_state.lang = "en"
+                    st.rerun()
+            if st.button("中文", key="lang_zh_btn",
+                        type=_primary if cur_lang == "zh" else _tertiary):
+                if cur_lang != "zh":
+                    st.session_state.lang = "zh"
+                    st.rerun()
 
     st.title(t("title"))
     st.caption(t("caption"))
