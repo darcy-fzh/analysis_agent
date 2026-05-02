@@ -420,14 +420,17 @@ h3 {
     padding: 2px 6px !important;
     height: 26px !important;
     min-height: 0 !important;
+    min-width: 0 !important;
     border-radius: 12px !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     font-size: 13px !important;
     font-weight: 500 !important;
-    line-height: 1 !important;
+    line-height: 22px !important;
     white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
 }
 [data-st-key="theme_btn"] button { font-size: 16px !important; }
 [data-st-key="top_ctrl_row"] button:hover {
@@ -445,10 +448,8 @@ h3 {
 [data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"] {
     gap: 2px !important;
 }
-/* Right-side columns shrink to content width */
-[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(2),
-[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(3),
-[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(4) {
+/* Theme column shrinks to icon width; lang columns get fixed share */
+[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(2) {
     flex: 0 0 auto !important;
     width: auto !important;
 }
@@ -1054,20 +1055,20 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
 </style>""", unsafe_allow_html=True)
 
     with st.container(key="top_ctrl_row"):
-        _, c_theme, c_en, c_zh = st.columns([6, 0.3, 0.35, 0.35])
+        _, c_theme, c_en, c_zh = st.columns([5, 0.3, 0.5, 0.5])
         with c_theme:
             icon = "◑" if is_dark else "◐"
             if st.button(icon, key="theme_btn", type="tertiary"):
                 st.session_state.theme = "light" if is_dark else "dark"
                 st.rerun()
         with c_en:
-            if st.button("EN", key="lang_en_btn",
+            if st.button("EN", key="lang_en_btn", use_container_width=True,
                         type="primary" if cur_lang == "en" else "tertiary"):
                 if cur_lang != "en":
                     st.session_state.lang = "en"
                     st.rerun()
         with c_zh:
-            if st.button("中文", key="lang_zh_btn",
+            if st.button("中文", key="lang_zh_btn", use_container_width=True,
                         type="primary" if cur_lang == "zh" else "tertiary"):
                 if cur_lang != "zh":
                     st.session_state.lang = "zh"
