@@ -431,6 +431,10 @@ h3 {
     white-space: nowrap !important;
     display: inline-flex !important;
     align-items: center !important;
+    flex-wrap: nowrap !important;
+}
+[data-st-key="top_ctrl_row"] button * {
+    white-space: nowrap !important;
 }
 [data-st-key="theme_btn"] button { font-size: 16px !important; }
 [data-st-key="top_ctrl_row"] button:hover {
