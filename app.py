@@ -411,55 +411,16 @@ h3 {
     background: transparent !important;
 }
 
-/* ── Top-right header controls ─────────────────────────────────── */
+/* ── Top-right language selector ───────────────────────────────── */
 [data-st-key="top_ctrl_row"] {
     margin-bottom: -4px !important;
 }
-/* Row: push columns to far right, center vertically */
-[data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"] {
-    justify-content: flex-end !important;
-    align-items: center !important;
-    gap: 4px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-/* Strip ALL wrappers — stElementContainer, stVerticalBlock, inner divs, markdown, stButton */
-[data-st-key="top_ctrl_row"] [data-testid="stElementContainer"],
-[data-st-key="top_ctrl_row"] [data-testid="stVerticalBlock"],
-[data-st-key="top_ctrl_row"] [data-testid="stVerticalBlock"] > div,
 [data-st-key="top_ctrl_row"] .stMarkdown,
-[data-st-key="top_ctrl_row"] [data-testid="stMarkdownContainer"],
-[data-st-key="top_ctrl_row"] .stButton,
-[data-st-key="top_ctrl_row"] .row-widget {
+[data-st-key="top_ctrl_row"] [data-testid="stMarkdownContainer"] {
     margin: 0 !important;
     padding: 0 !important;
-    line-height: 1 !important;
 }
-/* Both control columns: shrink-wrap, flex-center contents */
-[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(2),
-[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(3) {
-    flex: 0 0 auto !important;
-    display: flex !important;
-    align-items: center !important;
-}
-/* Spacer column: take no space (justify-content handles positioning) */
-[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(1) {
-    flex: 0 0 0 !important;
-    width: 0 !important;
-    padding: 0 !important;
-}
-/* Theme button — compact, transparent, 26px */
-[data-st-key="top_ctrl_row"] button {
-    height: 26px !important;
-    min-height: 0 !important;
-    padding: 0 4px !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    font-size: 16px !important;
-    line-height: 26px !important;
-}
-/* Native HTML select — exactly match button: 26px height, same padding */
+/* Native HTML select — clean, 26px, right-aligned */
 [data-st-key="top_ctrl_row"] select {
     font-size: 14px !important;
     font-weight: 500 !important;
@@ -864,206 +825,7 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
 
 
 def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None:
-    is_dark = st.session_state.get("theme", "light") == "dark"
     cur_lang = st.session_state.get("lang", "en")
-
-    # ── Dark mode CSS ────────────────────────────────────────────
-    if is_dark:
-        st.markdown("""<style>
-/* ── Dark mode — comprehensive overrides ─────────────────────── */
-
-/* App header bar (the native Streamlit top bar) */
-header[data-testid="stHeader"],
-.stApp > header {
-    background: #1c1c1e !important;
-    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
-}
-
-/* App & main backgrounds */
-[data-testid="stApp"],
-[data-testid="stMain"],
-[data-testid="stMainBlockContainer"],
-.main .block-container {
-    background: #1a1a1b !important;
-    color: #e4e4e5 !important;
-}
-
-/* All text */
-body, p, span, div, li, td, th, strong, em, a,
-[data-testid="stText"],
-[data-testid="stMarkdown"],
-[data-testid="stMarkdown"] p,
-[data-testid="stMarkdown"] li {
-    color: #e4e4e5 !important;
-}
-h1, h2, h3, h4, h5, h6 { color: #f2f2f7 !important; }
-label { color: rgba(228,228,229,0.75) !important; }
-[data-testid="stCaption"],
-[data-testid="stCaption"] p { color: rgba(228,228,229,0.45) !important; }
-
-/* ── Sidebar ──────────────────────────────────────────────────── */
-[data-testid="stSidebar"] {
-    background: rgba(28,28,30,0.98) !important;
-    border-right: 1px solid rgba(255,255,255,0.06) !important;
-}
-[data-testid="stSidebar"] * { color: #e4e4e5 !important; }
-/* Sidebar search box */
-[data-testid="stSidebar"] [data-testid="stTextInput"] [data-baseweb="input"] {
-    background: rgba(255,255,255,0.08) !important;
-    border: none !important;
-}
-[data-testid="stSidebar"] [data-testid="stTextInput"] input {
-    color: #e4e4e5 !important;
-    background: transparent !important;
-}
-[data-testid="stSidebar"] [data-testid="stTextInput"] input::placeholder {
-    color: rgba(228,228,229,0.40) !important;
-}
-/* Sidebar ALL buttons (table list, metrics, history) */
-[data-testid="stSidebar"] button,
-[data-testid="stSidebar"] [data-testid="baseButton-secondary"],
-[data-testid="stSidebar"] [data-testid="baseButton-primary"] {
-    background: rgba(255,255,255,0.06) !important;
-    color: #e4e4e5 !important;
-    border: 1px solid rgba(255,255,255,0.07) !important;
-}
-[data-testid="stSidebar"] button:hover,
-[data-testid="stSidebar"] [data-testid="baseButton-secondary"]:hover {
-    background: rgba(255,255,255,0.11) !important;
-}
-[data-testid="stSidebar"] [data-testid="baseButton-tertiary"] {
-    background: transparent !important;
-    border: none !important;
-}
-/* Dividers */
-hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
-
-/* ── Expanders ────────────────────────────────────────────────── */
-[data-testid="stExpander"] {
-    background: rgba(36,36,38,0.9) !important;
-    border: 1px solid rgba(255,255,255,0.07) !important;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.35) !important;
-}
-[data-testid="stExpander"] summary,
-[data-testid="stExpander"] summary * {
-    color: #e4e4e5 !important;
-    background: transparent !important;
-}
-[data-testid="stExpander"] summary:hover { background: rgba(255,255,255,0.04) !important; }
-[data-testid="stExpander"] > div:last-child { background: transparent !important; }
-
-/* ── Alerts / info / warning / success / error ────────────────── */
-[data-testid="stAlert"],
-[data-testid="stInfo"],
-[data-testid="stWarning"],
-[data-testid="stSuccess"],
-[data-testid="stError"] {
-    background: rgba(44,44,46,0.85) !important;
-    border-color: rgba(255,255,255,0.08) !important;
-}
-[data-testid="stAlert"] *,
-[data-testid="stInfo"] *,
-[data-testid="stWarning"] *,
-[data-testid="stSuccess"] *,
-[data-testid="stError"] * { color: #e4e4e5 !important; }
-
-/* ── Code blocks ──────────────────────────────────────────────── */
-[data-testid="stCodeBlock"],
-[data-testid="stCodeBlock"] pre,
-[data-testid="stCodeBlock"] code {
-    background: rgba(0,0,0,0.45) !important;
-    color: #e4e4e5 !important;
-}
-
-/* ── DataFrames / Tables ──────────────────────────────────────── */
-[data-testid="stDataFrame"] iframe,
-[data-testid="stDataFrame"] > div,
-[data-testid="stTable"] table {
-    background: rgba(28,28,30,0.9) !important;
-}
-[data-testid="stDataFrame"] * { color: #e4e4e5 !important; }
-[data-testid="stTable"] th, [data-testid="stTable"] td { color: #e4e4e5 !important; }
-
-/* ── Selectbox / dropdown ─────────────────────────────────────── */
-[data-testid="stSelectbox"] [data-baseweb="select"] > div {
-    background: rgba(44,44,46,0.9) !important;
-    border-color: rgba(255,255,255,0.08) !important;
-    color: #e4e4e5 !important;
-}
-[data-baseweb="popover"] [data-baseweb="menu"],
-[data-baseweb="popover"] ul {
-    background: #2c2c2e !important;
-    border-color: rgba(255,255,255,0.08) !important;
-}
-[data-baseweb="popover"] li,
-[data-baseweb="menu"] li { color: #e4e4e5 !important; }
-[data-baseweb="menu"] li:hover { background: rgba(255,255,255,0.07) !important; }
-
-/* ── Text inputs ──────────────────────────────────────────────── */
-[data-testid="stTextInput"] input {
-    background: rgba(44,44,46,0.85) !important;
-    color: #e4e4e5 !important;
-    border-color: rgba(255,255,255,0.08) !important;
-}
-
-/* ── Metric cards ─────────────────────────────────────────────── */
-[data-testid="stMetric"] {
-    background: rgba(255,255,255,0.04) !important;
-}
-[data-testid="stMetric"] * { color: #e4e4e5 !important; }
-
-/* ── Chat input ───────────────────────────────────────────────── */
-[data-testid="stBottom"],
-[data-testid="stBottom"] > div,
-[data-testid="stChatInputContainer"] {
-    background: #1a1a1b !important;
-    border-top: 1px solid rgba(255,255,255,0.06) !important;
-}
-/* Target all divs inside stChatInput (deeply nested) */
-[data-testid="stChatInput"],
-[data-testid="stChatInput"] > div,
-[data-testid="stChatInput"] div {
-    background: #2c2c2e !important;
-    border-color: rgba(255,255,255,0.08) !important;
-}
-[data-testid="stChatInput"] textarea {
-    background: #2c2c2e !important;
-    color: #e4e4e5 !important;
-    caret-color: #e4e4e5 !important;
-}
-[data-testid="stChatInput"] textarea::placeholder {
-    color: rgba(228,228,229,0.38) !important;
-}
-/* Send button keep transparent */
-[data-testid="stChatInput"] button,
-[data-testid="stChatInput"] button * {
-    background: transparent !important;
-}
-
-/* ── Stop bar ─────────────────────────────────────────────────── */
-[data-st-key="stop_bar"],
-[data-testid="stMain"] [data-testid="stHorizontalBlock"]:has([data-testid="baseButton-tertiary"]) {
-    background: rgba(44,44,46,0.92) !important;
-    border: 1px solid rgba(255,255,255,0.06) !important;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.4) !important;
-}
-
-/* ── Top controls dark variant ────────────────────────────────── */
-[data-st-key="top_ctrl_row"] button {
-    color: rgba(228,228,229,0.55) !important;
-}
-[data-st-key="top_ctrl_row"] button:hover {
-    background: rgba(255,255,255,0.08) !important;
-}
-[data-st-key="top_ctrl_row"] select {
-    color: #e4e4e5 !important;
-}
-/* ── Color pickers ────────────────────────────────────────────── */
-[data-testid="stColorPicker"] label { color: #e4e4e5 !important; }
-
-/* ── Plotly transparent bg ────────────────────────────────────── */
-.js-plotly-plot .plotly .main-svg { background: transparent !important; }
-        </style>""", unsafe_allow_html=True)
 
     # ── Handle language change from URL query param ─────────────────
     query_lang = st.query_params.get("lang")
@@ -1072,31 +834,21 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
         st.query_params.clear()
         st.rerun()
 
-    # ── Top-right controls ─────────────────────────────────────────
-    _c_ctrl = "rgba(0,0,0,0.45)" if not is_dark else "rgba(228,228,229,0.55)"
-    _c_text = "#1d1d1f" if not is_dark else "#e4e4e5"
-    st.markdown(f"""<style>
-[data-st-key="theme_btn"] button {{ color: {_c_ctrl} !important; }}
-</style>""", unsafe_allow_html=True)
+    # ── Top-right language selector ────────────────────────────────
     _en_sel = "selected" if cur_lang != "zh" else ""
     _zh_sel = "selected" if cur_lang == "zh" else ""
 
     with st.container(key="top_ctrl_row"):
-        col_spacer, col_theme, col_lang = st.columns([5, 0.35, 1.3])
-        with col_theme:
-            icon = "◑" if is_dark else "◐"
-            if st.button(icon, key="theme_btn", type="tertiary"):
-                st.session_state.theme = "light" if is_dark else "dark"
-                st.rerun()
-        with col_lang:
-            st.markdown(f"""<select onchange="window.location.search='?lang='+this.value"
+        st.markdown(f"""<div style="display:flex;justify-content:flex-end;">
+<select onchange="window.location.search='?lang='+this.value"
 style="font-size:14px;font-weight:500;background:transparent;border:none;
-color:{_c_text};padding:0 4px;cursor:pointer;outline:none;height:26px;
+color:#1d1d1f;padding:0 4px;cursor:pointer;outline:none;height:26px;
 -webkit-appearance:none;appearance:none;border-radius:0;
 line-height:26px;font-family:inherit;box-sizing:border-box;">
 <option value="en" style="color:#1d1d1f;background:#fff;" {_en_sel}>EN</option>
 <option value="zh" style="color:#1d1d1f;background:#fff;" {_zh_sel}>中文</option>
-</select>""", unsafe_allow_html=True)
+</select>
+</div>""", unsafe_allow_html=True)
 
     st.title(t("title"))
     st.caption(t("caption"))
