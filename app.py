@@ -415,50 +415,17 @@ h3 {
 [data-st-key="top_ctrl_row"] {
     margin-bottom: -4px !important;
 }
-/* Both buttons: compact, transparent */
-[data-st-key="top_ctrl_row"] button {
-    padding: 2px 6px !important;
-    height: 26px !important;
-    min-height: 0 !important;
-    border-radius: 12px !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    line-height: 22px !important;
-    white-space: nowrap !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    flex-wrap: nowrap !important;
-    overflow: visible !important;
-    word-break: keep-all !important;
+/* Strip all Streamlit wrapper spacing — controls are inline HTML */
+[data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"],
+[data-st-key="top_ctrl_row"] [data-testid="stElementContainer"],
+[data-st-key="top_ctrl_row"] [data-testid="stVerticalBlock"],
+[data-st-key="top_ctrl_row"] .stMarkdown,
+[data-st-key="top_ctrl_row"] [data-testid="stMarkdownContainer"] {
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
 }
-[data-st-key="top_ctrl_row"] button * {
-    white-space: nowrap !important;
-    flex-wrap: nowrap !important;
-    word-break: keep-all !important;
-    line-height: 22px !important;
-}
-[data-st-key="theme_btn"] button { font-size: 16px !important; }
-[data-st-key="top_ctrl_row"] button:hover {
-    background: rgba(0,0,0,0.05) !important;
-}
-/* Top controls — remove column gaps for compact side-by-side layout */
-[data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"] {
-    gap: 2px !important;
-}
-/* Theme column shrinks to icon width */
-[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(2) {
-    flex: 0 0 auto !important;
-    width: auto !important;
-}
-/* Lang column: don't shrink, fit dropdown */
-[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(3) {
-    flex: 0 0 auto !important;
-    min-width: fit-content !important;
-}
-/* Language dropdown (native HTML select) — no styling needed, inline handles it */
+/* Both controls sit in a single HTML flex row — no column-level CSS needed */
 </style>
 """
 
@@ -1036,10 +1003,6 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
     box-shadow: 0 2px 12px rgba(0,0,0,0.4) !important;
 }
 
-/* ── Top controls dark variant ────────────────────────────────── */
-[data-st-key="top_ctrl_row"] button:hover {
-    background: rgba(255,255,255,0.08) !important;
-}
 /* ── Color pickers ────────────────────────────────────────────── */
 [data-testid="stColorPicker"] label { color: #e4e4e5 !important; }
 
@@ -1047,39 +1010,40 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
 .js-plotly-plot .plotly .main-svg { background: transparent !important; }
         </style>""", unsafe_allow_html=True)
 
-    # ── Handle language change from URL query param ─────────────────
-    query_lang = st.query_params.get("lang")
-    if query_lang and query_lang in ("en", "zh") and query_lang != cur_lang:
-        st.session_state.lang = query_lang
+    # ── Handle URL query param changes (language & theme) ──────────
+    rerun_needed = False
+    for param, state_key, valid in [("lang", "lang", ("en", "zh")), ("theme", "theme", ("light", "dark"))]:
+        val = st.query_params.get(param)
+        if val and val in valid and val != st.session_state.get(state_key):
+            st.session_state[state_key] = val
+            rerun_needed = True
+    if rerun_needed:
         st.query_params.clear()
         st.rerun()
 
     # ── Top-right controls ─────────────────────────────────────────
-    _c_ctrl = "rgba(0,0,0,0.45)" if not is_dark else "rgba(228,228,229,0.55)"
     _c_text = "#1d1d1f" if not is_dark else "#e4e4e5"
-    st.markdown(f"""<style>
-[data-st-key="theme_btn"] button {{ color: {_c_ctrl} !important; }}
-</style>""", unsafe_allow_html=True)
+    _c_subtle = "rgba(0,0,0,0.45)" if not is_dark else "rgba(228,228,229,0.55)"
+    _icon = "◑" if is_dark else "◐"
+    _theme_next = "light" if is_dark else "dark"
+    _en_sel = "selected" if cur_lang != "zh" else ""
+    _zh_sel = "selected" if cur_lang == "zh" else ""
 
     with st.container(key="top_ctrl_row"):
-        _, c_theme, c_lang = st.columns([5, 0.35, 1.3])
-        with c_theme:
-            icon = "◑" if is_dark else "◐"
-            if st.button(icon, key="theme_btn", type="tertiary"):
-                st.session_state.theme = "light" if is_dark else "dark"
-                st.rerun()
-        with c_lang:
-            _en_sel = "selected" if cur_lang != "zh" else ""
-            _zh_sel = "selected" if cur_lang == "zh" else ""
-            st.markdown(f"""<select
-  onchange="window.location.search='?lang='+this.value"
-  style="font-size:13px;font-weight:500;background:transparent;border:none;
-         color:{_c_text};padding:2px 6px;cursor:pointer;outline:none;
-         -webkit-appearance:none;appearance:none;border-radius:0;
-         line-height:22px;font-family:inherit;">
-  <option value="en" style="color:#1d1d1f;background:#fff;" {_en_sel}>EN</option>
-  <option value="zh" style="color:#1d1d1f;background:#fff;" {_zh_sel}>中文</option>
-</select>""", unsafe_allow_html=True)
+        st.markdown(f"""<div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;height:26px;">
+<span onclick="window.location.search='?theme={_theme_next}'"
+style="display:inline-flex;align-items:center;height:26px;cursor:pointer;
+font-size:16px;padding:0 4px;line-height:1;color:{_c_subtle};
+user-select:none;-webkit-user-select:none;" title="Toggle theme">{_icon}</span>
+<select onchange="window.location.search='?lang='+this.value"
+style="font-size:14px;font-weight:500;background:transparent;border:none;
+color:{_c_text};padding:0 4px;cursor:pointer;outline:none;height:26px;
+-webkit-appearance:none;appearance:none;border-radius:0;
+line-height:26px;font-family:inherit;box-sizing:border-box;">
+<option value="en" style="color:#1d1d1f;background:#fff;" {_en_sel}>EN</option>
+<option value="zh" style="color:#1d1d1f;background:#fff;" {_zh_sel}>中文</option>
+</select>
+</div>""", unsafe_allow_html=True)
 
     st.title(t("title"))
     st.caption(t("caption"))
