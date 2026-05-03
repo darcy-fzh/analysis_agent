@@ -411,26 +411,37 @@ h3 {
     background: transparent !important;
 }
 
-/* ── Top-right language popover ────────────────────────────────── */
+/* ── Top-right language selectbox ──────────────────────────────── */
 [data-st-key="top_ctrl_row"] {
     margin-bottom: -4px !important;
-    display: flex !important;
+}
+/* Push selectbox to right edge */
+[data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"],
+[data-st-key="top_ctrl_row"] [data-testid="stVerticalBlock"] {
     justify-content: flex-end !important;
 }
-/* Popover trigger button — compact, clean */
-[data-st-key="top_ctrl_row"] button[kind] {
+/* Strip background/border/shadow from selectbox trigger (all nested div levels) */
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] {
+    background: transparent !important;
+}
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div,
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div > div,
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div > div > div {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+/* Compact sizing */
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
     font-size: 14px !important;
     font-weight: 500 !important;
+    padding: 0 4px !important;
+    min-height: 26px !important;
     height: 26px !important;
-    padding: 0 8px !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-/* Popover menu items */
-[data-baseweb="popover"] [data-testid="baseButton-secondary"],
-[data-baseweb="popover"] [data-testid="baseButton-tertiary"] {
-    border-radius: 8px !important;
+    border-radius: 0 !important;
 }
 </style>
 """
@@ -828,19 +839,21 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
     cur_lang = st.session_state.get("lang", "en")
 
     # ── Top-right language selector ────────────────────────────────
-    lang_label = "EN" if cur_lang != "zh" else "中文"
+    def _on_lang_change():
+        selected = st.session_state.get("_lang_widget")
+        if selected and selected in ("en", "zh"):
+            st.session_state.lang = selected
+
     with st.container(key="top_ctrl_row"):
-        with st.popover(lang_label, use_container_width=False):
-            if st.button("EN", key="pop_en", type="primary" if cur_lang != "zh" else "tertiary",
-                        use_container_width=True):
-                if cur_lang != "en":
-                    st.session_state.lang = "en"
-                    st.rerun()
-            if st.button("中文", key="pop_zh", type="primary" if cur_lang == "zh" else "tertiary",
-                        use_container_width=True):
-                if cur_lang != "zh":
-                    st.session_state.lang = "zh"
-                    st.rerun()
+        st.selectbox(
+            "Language",
+            options=["EN", "中文"],
+            index=0 if cur_lang != "zh" else 1,
+            format_func=lambda x: x,
+            label_visibility="collapsed",
+            key="_lang_widget",
+            on_change=_on_lang_change,
+        )
 
     st.title(t("title"))
     st.caption(t("caption"))
