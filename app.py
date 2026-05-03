@@ -415,17 +415,40 @@ h3 {
 [data-st-key="top_ctrl_row"] {
     margin-bottom: -4px !important;
 }
-/* Strip all Streamlit wrapper spacing so controls align */
-[data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"],
-[data-st-key="top_ctrl_row"] [data-testid="stElementContainer"],
-[data-st-key="top_ctrl_row"] [data-testid="stVerticalBlock"],
-[data-st-key="top_ctrl_row"] .stMarkdown,
-[data-st-key="top_ctrl_row"] [data-testid="stMarkdownContainer"] {
+/* Row: push columns to far right, center vertically */
+[data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"] {
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 4px !important;
     margin: 0 !important;
     padding: 0 !important;
-    gap: 0 !important;
 }
-/* Theme button — compact, transparent, 26px height */
+/* Strip ALL wrappers — stElementContainer, stVerticalBlock, inner divs, markdown, stButton */
+[data-st-key="top_ctrl_row"] [data-testid="stElementContainer"],
+[data-st-key="top_ctrl_row"] [data-testid="stVerticalBlock"],
+[data-st-key="top_ctrl_row"] [data-testid="stVerticalBlock"] > div,
+[data-st-key="top_ctrl_row"] .stMarkdown,
+[data-st-key="top_ctrl_row"] [data-testid="stMarkdownContainer"],
+[data-st-key="top_ctrl_row"] .stButton,
+[data-st-key="top_ctrl_row"] .row-widget {
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+}
+/* Both control columns: shrink-wrap, flex-center contents */
+[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(2),
+[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(3) {
+    flex: 0 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+}
+/* Spacer column: take no space (justify-content handles positioning) */
+[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(1) {
+    flex: 0 0 0 !important;
+    width: 0 !important;
+    padding: 0 !important;
+}
+/* Theme button — compact, transparent, 26px */
 [data-st-key="top_ctrl_row"] button {
     height: 26px !important;
     min-height: 0 !important;
@@ -435,21 +458,8 @@ h3 {
     box-shadow: none !important;
     font-size: 16px !important;
     line-height: 26px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
 }
-/* Theme column — shrink to fit */
-[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(2) {
-    flex: 0 0 auto !important;
-    width: auto !important;
-}
-/* Lang column — shrink to fit */
-[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(3) {
-    flex: 0 0 auto !important;
-    min-width: fit-content !important;
-}
-/* Native HTML select — match button dimensions */
+/* Native HTML select — exactly match button: 26px height, same padding */
 [data-st-key="top_ctrl_row"] select {
     font-size: 14px !important;
     font-weight: 500 !important;
@@ -457,6 +467,9 @@ h3 {
     line-height: 26px !important;
     padding: 0 4px !important;
     font-family: inherit !important;
+    border: none !important;
+    background: transparent !important;
+    box-sizing: border-box !important;
 }
 </style>
 """
