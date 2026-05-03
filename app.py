@@ -444,28 +444,37 @@ h3 {
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(0,0,0,0.05) !important;
 }
-/* Active lang button keeps primary blue fill */
-[data-st-key="top_ctrl_row"] button[kind="primary"] {
-    background: #007AFF !important;
-    color: #fff !important;
-}
-[data-st-key="top_ctrl_row"] button[kind="primary"]:hover {
-    background: #0062cc !important;
-}
 /* Top controls — remove column gaps for compact side-by-side layout */
 [data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"] {
     gap: 2px !important;
 }
-/* Theme column shrinks to icon width; lang columns get fixed share */
+/* Theme column shrinks to icon width */
 [data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(2) {
     flex: 0 0 auto !important;
     width: auto !important;
 }
-/* Lang columns: don't shrink, stay wide enough for horizontal text */
-[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(3),
-[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(4) {
+/* Lang column: don't shrink, fit dropdown */
+[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(3) {
     flex: 0 0 auto !important;
     min-width: fit-content !important;
+}
+/* Language selectbox — compact, transparent, matches header style */
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    padding: 2px 6px !important;
+    min-height: 26px !important;
+    border-radius: 12px !important;
+}
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div:hover {
+    background: rgba(0,0,0,0.05) !important;
+}
+/* Hide selectbox dropdown arrow container border */
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div > div {
+    background: transparent !important;
 }
 </style>
 """
@@ -1048,12 +1057,12 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(255,255,255,0.08) !important;
 }
-[data-st-key="top_ctrl_row"] button[kind="primary"] {
-    background: #0A84FF !important;
-    color: #fff !important;
+/* Language selectbox header — dark */
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
+    color: #e4e4e5 !important;
 }
-[data-st-key="top_ctrl_row"] button[kind="primary"]:hover {
-    background: #409CFF !important;
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div:hover {
+    background: rgba(255,255,255,0.08) !important;
 }
 /* ── Color pickers ────────────────────────────────────────────── */
 [data-testid="stColorPicker"] label { color: #e4e4e5 !important; }
@@ -1069,24 +1078,24 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
 </style>""", unsafe_allow_html=True)
 
     with st.container(key="top_ctrl_row"):
-        _, c_theme, c_en, c_zh = st.columns([5, 0.35, 0.6, 0.7])
+        _, c_theme, c_lang = st.columns([5, 0.35, 1.3])
         with c_theme:
             icon = "◑" if is_dark else "◐"
             if st.button(icon, key="theme_btn", type="tertiary"):
                 st.session_state.theme = "light" if is_dark else "dark"
                 st.rerun()
-        with c_en:
-            if st.button("EN", key="lang_en_btn", use_container_width=True,
-                        type="primary" if cur_lang == "en" else "tertiary"):
-                if cur_lang != "en":
-                    st.session_state.lang = "en"
-                    st.rerun()
-        with c_zh:
-            if st.button("中文", key="lang_zh_btn", use_container_width=True,
-                        type="primary" if cur_lang == "zh" else "tertiary"):
-                if cur_lang != "zh":
-                    st.session_state.lang = "zh"
-                    st.rerun()
+        with c_lang:
+            lang_option = st.selectbox(
+                "Language",
+                options=["EN", "中文"],
+                index=0 if cur_lang != "zh" else 1,
+                label_visibility="collapsed",
+                key="lang_dropdown",
+            )
+            new_lang = "en" if lang_option == "EN" else "zh"
+            if new_lang != cur_lang:
+                st.session_state.lang = new_lang
+                st.rerun()
 
     st.title(t("title"))
     st.caption(t("caption"))
