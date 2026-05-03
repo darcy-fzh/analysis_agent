@@ -458,7 +458,7 @@ h3 {
     flex: 0 0 auto !important;
     min-width: fit-content !important;
 }
-/* Language selectbox — compact, transparent, matches header style */
+/* Language selectbox — completely borderless, no background box */
 [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
     background: transparent !important;
     border: none !important;
@@ -467,14 +467,24 @@ h3 {
     font-weight: 500 !important;
     padding: 2px 6px !important;
     min-height: 26px !important;
-    border-radius: 12px !important;
+    border-radius: 0 !important;
 }
 [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div:hover {
-    background: rgba(0,0,0,0.05) !important;
-}
-/* Hide selectbox dropdown arrow container border */
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div > div {
     background: transparent !important;
+}
+/* Nuke all backgrounds/borders on every nested div inside the header selectbox */
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div:hover {
+    background: transparent !important;
+}
+/* Keep dropdown menu visible when open */
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="popover"] div,
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="popover"] li {
+    background: inherit !important;
 }
 </style>
 """
@@ -1057,12 +1067,20 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(255,255,255,0.08) !important;
 }
-/* Language selectbox header — dark */
+/* Language selectbox header — dark, completely borderless */
 [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
     color: #e4e4e5 !important;
 }
 [data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div:hover {
-    background: rgba(255,255,255,0.08) !important;
+    background: transparent !important;
+}
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div:hover {
+    background: transparent !important;
 }
 /* ── Color pickers ────────────────────────────────────────────── */
 [data-testid="stColorPicker"] label { color: #e4e4e5 !important; }
