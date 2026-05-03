@@ -411,26 +411,26 @@ h3 {
     background: transparent !important;
 }
 
-/* ── Top-right language selector ───────────────────────────────── */
+/* ── Top-right language popover ────────────────────────────────── */
 [data-st-key="top_ctrl_row"] {
     margin-bottom: -4px !important;
+    display: flex !important;
+    justify-content: flex-end !important;
 }
-[data-st-key="top_ctrl_row"] .stMarkdown,
-[data-st-key="top_ctrl_row"] [data-testid="stMarkdownContainer"] {
-    margin: 0 !important;
-    padding: 0 !important;
-}
-/* Native HTML select — clean, 26px, right-aligned */
-[data-st-key="top_ctrl_row"] select {
+/* Popover trigger button — compact, clean */
+[data-st-key="top_ctrl_row"] button[kind] {
     font-size: 14px !important;
     font-weight: 500 !important;
     height: 26px !important;
-    line-height: 26px !important;
-    padding: 0 4px !important;
-    font-family: inherit !important;
-    border: none !important;
+    padding: 0 8px !important;
     background: transparent !important;
-    box-sizing: border-box !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+/* Popover menu items */
+[data-baseweb="popover"] [data-testid="baseButton-secondary"],
+[data-baseweb="popover"] [data-testid="baseButton-tertiary"] {
+    border-radius: 8px !important;
 }
 </style>
 """
@@ -827,29 +827,20 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
 def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None:
     cur_lang = st.session_state.get("lang", "en")
 
-    # ── Handle language change from URL query param ─────────────────
-    query_lang = st.query_params.get("lang")
-    if isinstance(query_lang, list):
-        query_lang = query_lang[0] if query_lang else None
-    if query_lang and query_lang in ("en", "zh") and query_lang != cur_lang:
-        st.session_state.lang = query_lang
-        st.rerun()
-
     # ── Top-right language selector ────────────────────────────────
-    _en_sel = "selected" if cur_lang != "zh" else ""
-    _zh_sel = "selected" if cur_lang == "zh" else ""
-
+    lang_label = "EN" if cur_lang != "zh" else "中文"
     with st.container(key="top_ctrl_row"):
-        st.markdown(f"""<div style="display:flex;justify-content:flex-end;">
-<select onchange="window.location.search='?lang='+this.value"
-style="font-size:14px;font-weight:500;background:transparent;border:none;
-color:#1d1d1f;padding:0 4px;cursor:pointer;outline:none;height:26px;
--webkit-appearance:none;appearance:none;border-radius:0;
-line-height:26px;font-family:inherit;box-sizing:border-box;">
-<option value="en" style="color:#1d1d1f;background:#fff;" {_en_sel}>EN</option>
-<option value="zh" style="color:#1d1d1f;background:#fff;" {_zh_sel}>中文</option>
-</select>
-</div>""", unsafe_allow_html=True)
+        with st.popover(lang_label, use_container_width=False):
+            if st.button("EN", key="pop_en", type="primary" if cur_lang != "zh" else "tertiary",
+                        use_container_width=True):
+                if cur_lang != "en":
+                    st.session_state.lang = "en"
+                    st.rerun()
+            if st.button("中文", key="pop_zh", type="primary" if cur_lang == "zh" else "tertiary",
+                        use_container_width=True):
+                if cur_lang != "zh":
+                    st.session_state.lang = "zh"
+                    st.rerun()
 
     st.title(t("title"))
     st.caption(t("caption"))
