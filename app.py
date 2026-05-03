@@ -458,34 +458,7 @@ h3 {
     flex: 0 0 auto !important;
     min-width: fit-content !important;
 }
-/* Language selectbox — completely borderless, no background box */
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    padding: 2px 6px !important;
-    min-height: 26px !important;
-    border-radius: 0 !important;
-}
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div:hover {
-    background: transparent !important;
-}
-/* Nuke all backgrounds/borders on every nested div inside the header selectbox */
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div:hover {
-    background: transparent !important;
-}
-/* Keep dropdown menu visible when open */
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="popover"] div,
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="popover"] li {
-    background: inherit !important;
-}
+/* Language dropdown (native HTML select) — no styling needed, inline handles it */
 </style>
 """
 
@@ -1067,21 +1040,6 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
 [data-st-key="top_ctrl_row"] button:hover {
     background: rgba(255,255,255,0.08) !important;
 }
-/* Language selectbox header — dark, completely borderless */
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
-    color: #e4e4e5 !important;
-}
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div:hover {
-    background: transparent !important;
-}
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] div:hover {
-    background: transparent !important;
-}
 /* ── Color pickers ────────────────────────────────────────────── */
 [data-testid="stColorPicker"] label { color: #e4e4e5 !important; }
 
@@ -1089,8 +1047,16 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
 .js-plotly-plot .plotly .main-svg { background: transparent !important; }
         </style>""", unsafe_allow_html=True)
 
+    # ── Handle language change from URL query param ─────────────────
+    query_lang = st.query_params.get("lang")
+    if query_lang and query_lang in ("en", "zh") and query_lang != cur_lang:
+        st.session_state.lang = query_lang
+        st.query_params.clear()
+        st.rerun()
+
     # ── Top-right controls ─────────────────────────────────────────
     _c_ctrl = "rgba(0,0,0,0.45)" if not is_dark else "rgba(228,228,229,0.55)"
+    _c_text = "#1d1d1f" if not is_dark else "#e4e4e5"
     st.markdown(f"""<style>
 [data-st-key="theme_btn"] button {{ color: {_c_ctrl} !important; }}
 </style>""", unsafe_allow_html=True)
@@ -1103,17 +1069,17 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
                 st.session_state.theme = "light" if is_dark else "dark"
                 st.rerun()
         with c_lang:
-            lang_option = st.selectbox(
-                "Language",
-                options=["EN", "中文"],
-                index=0 if cur_lang != "zh" else 1,
-                label_visibility="collapsed",
-                key="lang_dropdown",
-            )
-            new_lang = "en" if lang_option == "EN" else "zh"
-            if new_lang != cur_lang:
-                st.session_state.lang = new_lang
-                st.rerun()
+            _en_sel = "selected" if cur_lang != "zh" else ""
+            _zh_sel = "selected" if cur_lang == "zh" else ""
+            st.markdown(f"""<select
+  onchange="window.location.search='?lang='+this.value"
+  style="font-size:13px;font-weight:500;background:transparent;border:none;
+         color:{_c_text};padding:2px 6px;cursor:pointer;outline:none;
+         -webkit-appearance:none;appearance:none;border-radius:0;
+         line-height:22px;font-family:inherit;">
+  <option value="en" style="color:#1d1d1f;background:#fff;" {_en_sel}>EN</option>
+  <option value="zh" style="color:#1d1d1f;background:#fff;" {_zh_sel}>中文</option>
+</select>""", unsafe_allow_html=True)
 
     st.title(t("title"))
     st.caption(t("caption"))
