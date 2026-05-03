@@ -829,9 +829,10 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
 
     # ── Handle language change from URL query param ─────────────────
     query_lang = st.query_params.get("lang")
+    if isinstance(query_lang, list):
+        query_lang = query_lang[0] if query_lang else None
     if query_lang and query_lang in ("en", "zh") and query_lang != cur_lang:
         st.session_state.lang = query_lang
-        st.query_params.clear()
         st.rerun()
 
     # ── Top-right language selector ────────────────────────────────
