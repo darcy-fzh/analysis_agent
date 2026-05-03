@@ -411,37 +411,34 @@ h3 {
     background: transparent !important;
 }
 
-/* ── Top-right language selectbox ──────────────────────────────── */
+/* ── Top-right language buttons ──────────────────────────────── */
 [data-st-key="top_ctrl_row"] {
     margin-bottom: -4px !important;
 }
-/* Push selectbox to right edge */
-[data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"],
-[data-st-key="top_ctrl_row"] [data-testid="stVerticalBlock"] {
-    justify-content: flex-end !important;
-}
-/* Strip background/border/shadow from selectbox trigger (all nested div levels) */
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] {
-    background: transparent !important;
-}
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div,
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div > div,
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div > div > div {
-    background: transparent !important;
-    background-color: transparent !important;
-    border: none !important;
-    border-color: transparent !important;
-    box-shadow: none !important;
-    outline: none !important;
-}
-/* Compact sizing */
-[data-st-key="top_ctrl_row"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    padding: 0 4px !important;
-    min-height: 26px !important;
+[data-st-key="top_ctrl_row"] button {
     height: 26px !important;
-    border-radius: 0 !important;
+    min-height: 0 !important;
+    padding: 0 6px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    line-height: 26px !important;
+    white-space: nowrap !important;
+}
+[data-st-key="top_ctrl_row"] button[kind="primary"] {
+    background: #007AFF !important;
+    color: #fff !important;
+}
+[data-st-key="top_ctrl_row"] button[kind="primary"]:hover {
+    background: #0062cc !important;
+}
+[data-st-key="top_ctrl_row"] button:hover {
+    background: rgba(0,0,0,0.05) !important;
+}
+[data-st-key="top_ctrl_row"] [data-testid="stHorizontalBlock"] {
+    gap: 2px !important;
 }
 </style>
 """
@@ -838,22 +835,21 @@ def render_sidebar(db: DatabaseManager, cache: QueryCache) -> None:
 def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None:
     cur_lang = st.session_state.get("lang", "en")
 
-    # ── Top-right language selector ────────────────────────────────
-    def _on_lang_change():
-        selected = st.session_state.get("_lang_widget")
-        if selected and selected in ("en", "zh"):
-            st.session_state.lang = selected
-
+    # ── Top-right language buttons ────────────────────────────────
     with st.container(key="top_ctrl_row"):
-        st.selectbox(
-            "Language",
-            options=["EN", "中文"],
-            index=0 if cur_lang != "zh" else 1,
-            format_func=lambda x: x,
-            label_visibility="collapsed",
-            key="_lang_widget",
-            on_change=_on_lang_change,
-        )
+        _, col_en, col_zh = st.columns([4, 0.35, 0.45])
+        with col_en:
+            if st.button("EN", key="lang_en", use_container_width=True,
+                        type="primary" if cur_lang != "zh" else "tertiary"):
+                if cur_lang != "en":
+                    st.session_state.lang = "en"
+                    st.rerun()
+        with col_zh:
+            if st.button("中文", key="lang_zh", use_container_width=True,
+                        type="primary" if cur_lang == "zh" else "tertiary"):
+                if cur_lang != "zh":
+                    st.session_state.lang = "zh"
+                    st.rerun()
 
     st.title(t("title"))
     st.caption(t("caption"))
