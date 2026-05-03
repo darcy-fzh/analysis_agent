@@ -1,4 +1,6 @@
 """Pre-built ratio metrics with safe SQL templates using CAST + NULLIF."""
+from __future__ import annotations
+
 
 METRICS = [
     {

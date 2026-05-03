@@ -420,7 +420,6 @@ h3 {
     padding: 2px 6px !important;
     height: 26px !important;
     min-height: 0 !important;
-    min-width: 0 !important;
     border-radius: 12px !important;
     background: transparent !important;
     border: none !important;
@@ -432,9 +431,14 @@ h3 {
     display: inline-flex !important;
     align-items: center !important;
     flex-wrap: nowrap !important;
+    overflow: visible !important;
+    word-break: keep-all !important;
 }
 [data-st-key="top_ctrl_row"] button * {
     white-space: nowrap !important;
+    flex-wrap: nowrap !important;
+    word-break: keep-all !important;
+    line-height: 22px !important;
 }
 [data-st-key="theme_btn"] button { font-size: 16px !important; }
 [data-st-key="top_ctrl_row"] button:hover {
@@ -456,6 +460,12 @@ h3 {
 [data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(2) {
     flex: 0 0 auto !important;
     width: auto !important;
+}
+/* Lang columns: don't shrink, stay wide enough for horizontal text */
+[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(3),
+[data-st-key="top_ctrl_row"] [data-testid="column"]:nth-child(4) {
+    flex: 0 0 auto !important;
+    min-width: fit-content !important;
 }
 </style>
 """
@@ -1059,7 +1069,7 @@ hr { border-color: rgba(255,255,255,0.08) !important; opacity: 1 !important; }
 </style>""", unsafe_allow_html=True)
 
     with st.container(key="top_ctrl_row"):
-        _, c_theme, c_en, c_zh = st.columns([5, 0.3, 0.5, 0.5])
+        _, c_theme, c_en, c_zh = st.columns([5, 0.35, 0.6, 0.7])
         with c_theme:
             icon = "◑" if is_dark else "◐"
             if st.button(icon, key="theme_btn", type="tertiary"):
