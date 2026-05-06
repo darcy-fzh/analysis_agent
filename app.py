@@ -395,7 +395,7 @@ h3 {
     padding-bottom: 90px !important;
 }
 
-/* ── Stop bar — black square button pinned to bottom ─────────── */
+/* ── Bottom chat bar — fixed at viewport bottom ───────────────── */
 [data-st-key="chat_bar"] {
     position: fixed !important;
     bottom: 0 !important;
@@ -406,19 +406,47 @@ h3 {
     backdrop-filter: blur(12px) saturate(160%) !important;
     -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
     border-top: 1px solid rgba(0,0,0,0.06) !important;
-    padding: 8px 24px !important;
+    padding: 10px 24px 14px 24px !important;
 }
-[data-st-key="chat_bar"] button {
+[data-st-key="chat_bar"] [data-testid="stHorizontalBlock"] {
+    align-items: center !important;
+    gap: 8px !important;
+}
+/* Text input — clean, borderless */
+[data-st-key="chat_bar"] input {
+    border: 1px solid rgba(0,0,0,0.1) !important;
+    border-radius: 10px !important;
+    padding: 8px 12px !important;
+    font-size: 15px !important;
+    background: rgba(0,0,0,0.03) !important;
+}
+/* Send button — compact blue */
+[data-st-key="chat_bar"] [data-st-key="send_btn"] button {
+    background: #007AFF !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    font-size: 18px !important;
+    padding: 8px 0 !important;
+    height: auto !important;
+    min-height: 42px !important;
+    width: 100% !important;
+}
+/* Stop button — black square */
+[data-st-key="chat_bar"] [data-st-key="stop_btn"] button {
     background: #1d1d1f !important;
     color: #fff !important;
     border: none !important;
-    border-radius: 6px !important;
-    font-weight: 600 !important;
-    font-size: 15px !important;
-    padding: 10px 0 !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    font-size: 18px !important;
+    padding: 8px 0 !important;
+    height: auto !important;
+    min-height: 42px !important;
     width: 100% !important;
 }
-[data-st-key="chat_bar"] button:hover {
+[data-st-key="chat_bar"] [data-st-key="stop_btn"] button:hover {
     background: #333 !important;
 }
 
@@ -909,15 +937,21 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         _render_user(st.session_state.stopped_question)
         st.info(t("analysis_stopped"))
 
-    # ── Bottom bar: chat input or stop button ──────────────────────
+    # ── Bottom input bar: text input + send/stop button ────────────
     is_running = bool(st.session_state.get("analysis_running"))
-
-    if is_running:
-        # Replace chat input with a black square stop button
-        with st.container(key="chat_bar"):
-            _, c_stop, _ = st.columns([3, 2, 3])
-            with c_stop:
-                if st.button("■ " + t("stop"), key="stop_btn", use_container_width=True):
+    with st.container(key="chat_bar"):
+        col_in, col_btn = st.columns([9, 1])
+        with col_in:
+            user_input = st.text_input(
+                t("ask_question"),
+                placeholder=t("ask_question"),
+                label_visibility="collapsed",
+                key="user_query",
+                disabled=is_running,
+            )
+        with col_btn:
+            if is_running:
+                if st.button("■", key="stop_btn", help=t("stop"), use_container_width=True):
                     st.session_state.stop_requested = True
                     st.session_state.analysis_running = False
                     st.session_state.stopped_question = (
@@ -925,19 +959,20 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
                     )
                     st.session_state.pop("last_result", None)
                     st.rerun()
-        prompt = None
-    else:
-        prompt = st.chat_input(t("ask_question"))
-
-    if prompt:
-        st.session_state.pending_question = prompt.strip()
-        st.session_state.current_question = prompt.strip()
-        st.session_state.pending_metric_sql = None
-        st.session_state.analysis_running = True
-        st.session_state.stop_requested = False
-        st.session_state.pop("stopped_question", None)
-        st.session_state.pop("last_result", None)
-        st.rerun()
+            else:
+                if st.button("↑", key="send_btn", help="Send", use_container_width=True):
+                    user_input = st.session_state.get("user_query", "").strip()
+                    if user_input:
+                        st.session_state.pending_question = user_input
+                        st.session_state.current_question = user_input
+                        st.session_state.pending_metric_sql = None
+                        st.session_state.analysis_running = True
+                        st.session_state.stop_requested = False
+                        st.session_state.pop("stopped_question", None)
+                        st.session_state.pop("last_result", None)
+                        # Clear input for next question
+                        st.session_state.user_query = ""
+                        st.rerun()
 
 
 def main() -> None:
