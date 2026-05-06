@@ -395,20 +395,31 @@ h3 {
     padding-bottom: 90px !important;
 }
 
-/* ── Stop bar — floating pill with soft shadow ─────────────────── */
-[data-st-key="stop_bar"],
-[data-testid="stMain"] [data-testid="stHorizontalBlock"]:has([data-testid="baseButton-tertiary"]) {
-    background: rgba(255,255,255,0.85) !important;
+/* ── Stop bar — black square button pinned to bottom ─────────── */
+[data-st-key="chat_bar"] {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 999 !important;
+    background: rgba(255,255,255,0.92) !important;
     backdrop-filter: blur(12px) saturate(160%) !important;
     -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
-    border: none !important;
-    border-radius: 12px !important;
-    padding: 6px 0 !important;
-    margin: 8px 0 !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(0,0,0,0.06) !important;
+    border-top: 1px solid rgba(0,0,0,0.06) !important;
+    padding: 8px 24px !important;
 }
-[data-st-key="stop_bar"] [data-testid="stHorizontalBlock"] {
-    background: transparent !important;
+[data-st-key="chat_bar"] button {
+    background: #1d1d1f !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    padding: 10px 0 !important;
+    width: 100% !important;
+}
+[data-st-key="chat_bar"] button:hover {
+    background: #333 !important;
 }
 
 /* ── Top-right language buttons ──────────────────────────────── */
@@ -866,25 +877,6 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         st.session_state.stop_requested = False
         st.session_state.current_question = question  # saved so stop can restore it
 
-    # ── Stop button — must render OUTSIDE the `if question:` block. ──
-    # During the rerun that processes the button click, `question` is None
-    # (pending_question was already consumed), so the button would not appear
-    # inside `if question:` → the click is lost → analysis_running stays True.
-    # Rendering it here (conditional on analysis_running) ensures it survives
-    # every rerun and its click is always processed.
-    if st.session_state.get("analysis_running"):
-        with st.container(key="stop_bar"):
-            _, stop_col, _ = st.columns([4, 2, 4])
-            with stop_col:
-                if st.button(t("stop"), key="stop_btn", type="tertiary", use_container_width=True):
-                    st.session_state.stop_requested = True
-                    st.session_state.analysis_running = False
-                    st.session_state.stopped_question = (
-                        st.session_state.get("current_question", "")
-                    )
-                    st.session_state.pop("last_result", None)
-                    st.rerun()
-
     # ── Render conversation ──
     if question:
         # User bubble
@@ -917,20 +909,33 @@ def render_main(db: DatabaseManager, llm: LLMService, cache: QueryCache) -> None
         _render_user(st.session_state.stopped_question)
         st.info(t("analysis_stopped"))
 
-    # ── Native chat input — always fixed at the viewport bottom by Streamlit ──
-    # Disabled while analysis runs so the user can't queue a second question.
+    # ── Bottom bar: chat input or stop button ──────────────────────
     is_running = bool(st.session_state.get("analysis_running"))
-    prompt = st.chat_input(
-        t("analyzing") if is_running else t("ask_question"),
-        disabled=is_running,
-    )
-    if prompt and not is_running:
+
+    if is_running:
+        # Replace chat input with a black square stop button
+        with st.container(key="chat_bar"):
+            _, c_stop, _ = st.columns([3, 2, 3])
+            with c_stop:
+                if st.button("■ " + t("stop"), key="stop_btn", use_container_width=True):
+                    st.session_state.stop_requested = True
+                    st.session_state.analysis_running = False
+                    st.session_state.stopped_question = (
+                        st.session_state.get("current_question", "")
+                    )
+                    st.session_state.pop("last_result", None)
+                    st.rerun()
+        prompt = None
+    else:
+        prompt = st.chat_input(t("ask_question"))
+
+    if prompt:
         st.session_state.pending_question = prompt.strip()
         st.session_state.current_question = prompt.strip()
         st.session_state.pending_metric_sql = None
         st.session_state.analysis_running = True
         st.session_state.stop_requested = False
-        st.session_state.pop("stopped_question", None)  # clear stale stop state
+        st.session_state.pop("stopped_question", None)
         st.session_state.pop("last_result", None)
         st.rerun()
 
